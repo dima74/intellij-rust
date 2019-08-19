@@ -28,7 +28,6 @@ import com.intellij.util.Consumer
 import org.rust.MinRustcVersion
 import org.rust.cargo.runconfig.CargoCommandRunner
 import org.rust.cargo.runconfig.buildtool.*
-import org.rust.cargo.runconfig.buildtool.CargoBuildEventsConverter.Companion.RUSTC_MESSAGE_GROUP
 import org.rust.cargo.runconfig.buildtool.CargoBuildManager.getBuildConfiguration
 import org.rust.cargo.runconfig.buildtool.CargoBuildManager.mockBuildProgressListener
 import org.rust.cargo.runconfig.buildtool.CargoBuildManager.mockProgressIndicator

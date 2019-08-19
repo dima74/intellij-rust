@@ -5,8 +5,6 @@
 
 package org.rust.ide.annotator
 
-import com.google.gson.JsonParser
-import com.google.gson.stream.JsonReader
 import com.intellij.CommonBundle
 import com.intellij.execution.ExecutionException
 import com.intellij.lang.annotation.AnnotationHolder
@@ -40,7 +38,7 @@ import org.rust.lang.RsConstants
 import org.rust.lang.core.psi.RsFile
 import org.rust.lang.core.psi.ext.containingCargoPackage
 import org.rust.openapiext.*
-import java.io.StringReader
+import org.rust.stdext.JsonUtil.tryParseJsonObject
 import java.nio.file.Path
 import java.util.*
 
@@ -183,16 +181,14 @@ fun AnnotationHolder.createAnnotationsForFile(file: RsFile, annotationResult: Rs
 }
 
 class RsExternalLinterResult(commandOutput: List<String>) {
-    val messages: List<CargoTopMessage> = commandOutput.asSequence()
+    val messages: List<CargoTopMessage> = commandOutput
         .filter { MESSAGE_REGEX.matches(it) }
-        .map { JsonReader(StringReader(it)).apply { isLenient = true } }
-        .map { PARSER.parse(it) }
-        .filter { it.isJsonObject }
-        .mapNotNull { CargoTopMessage.fromJson(it.asJsonObject) }
-        .toList()
+        .mapNotNull { line ->
+            val jsonObject = tryParseJsonObject(line) ?: return@mapNotNull null
+            CargoTopMessage.fromJson(jsonObject)
+        }
 
     companion object {
-        private val PARSER = JsonParser()
         private val MESSAGE_REGEX = """\s*\{.*"message".*""".toRegex()
     }
 }
@@ -218,8 +214,8 @@ private data class RsExternalLinterFilteredMessage(
 
             val span = message.spans
                 .firstOrNull { it.is_primary && it.isValid() }
-                // Some error messages are global, and we *could* show then atop of the editor,
-                // but they look rather ugly, so just skip them.
+            // Some error messages are global, and we *could* show then atop of the editor,
+            // but they look rather ugly, so just skip them.
                 ?: return null
 
             val syntaxErrors = listOf("expected pattern", "unexpected token")
