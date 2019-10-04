@@ -34,11 +34,6 @@ val ALLOW_INTERNAL_UNSTABLE = CompilerFeature("allow_internal_unstable", ACTIVE,
 // below (it has to be checked before expansion possibly makes
 // macros disappear).
 val ALLOW_INTERNAL_UNSAFE = CompilerFeature("allow_internal_unsafe", ACTIVE, "1.0.0")
-// Allows using the macros:
-// + `__diagnostic_used`
-// + `__register_diagnostic`
-// +`__build_diagnostic_array`
-val RUSTC_DIAGNOSTIC_MACROS = CompilerFeature("rustc_diagnostic_macros", ACTIVE, "1.0.0")
 // Allows using `#[rustc_const_unstable(feature = "foo", ..)]` which
 // lets a function to be `const` when opted into with `#![feature(foo)]`.
 val RUSTC_CONST_UNSTABLE = CompilerFeature("rustc_const_unstable", ACTIVE, "1.0.0")
@@ -242,8 +237,6 @@ val GENERIC_ASSOCIATED_TYPES = CompilerFeature("generic_associated_types", ACTIV
 val TRAIT_ALIAS = CompilerFeature("trait_alias", ACTIVE, "1.24.0")
 // Allows infering `'static` outlives requirements (RFC 2093).
 val INFER_STATIC_OUTLIVES_REQUIREMENTS = CompilerFeature("infer_static_outlives_requirements", ACTIVE, "1.26.0")
-// Allows macro invocations in `extern {}` blocks.
-val MACROS_IN_EXTERN = CompilerFeature("macros_in_extern", ACTIVE, "1.27.0")
 // Allows accessing fields of unions inside `const` functions.
 val CONST_FN_UNION = CompilerFeature("const_fn_union", ACTIVE, "1.27.0")
 // Allows casting raw pointers to `usize` during const eval.
@@ -260,9 +253,8 @@ val TRIVIAL_BOUNDS = CompilerFeature("trivial_bounds", ACTIVE, "1.28.0")
 val LABEL_BREAK_VALUE = CompilerFeature("label_break_value", ACTIVE, "1.28.0")
 // Allows using `#[doc(keyword = "...")]`.
 val DOC_KEYWORD = CompilerFeature("doc_keyword", ACTIVE, "1.28.0")
-// Allows async and await syntax.
-val ASYNC_AWAIT = CompilerFeature("async_await", ACTIVE, "1.28.0")
-// Allows reinterpretation of the bits of a value of one type as another type during const eval.
+// Allows reinterpretation of the bits of a value of one type as another
+// type during const eval.
 val CONST_TRANSMUTE = CompilerFeature("const_transmute", ACTIVE, "1.29.0")
 // Allows using `try {...}` expressions.
 val TRY_BLOCKS = CompilerFeature("try_blocks", ACTIVE, "1.29.0")
@@ -283,8 +275,6 @@ val UNSIZED_LOCALS = CompilerFeature("unsized_locals", ACTIVE, "1.30.0")
 val CUSTOM_TEST_FRAMEWORKS = CompilerFeature("custom_test_frameworks", ACTIVE, "1.30.0")
 // Allows non-builtin attributes in inner attribute position.
 val CUSTOM_INNER_ATTRIBUTES = CompilerFeature("custom_inner_attributes", ACTIVE, "1.30.0")
-// Allows mixing bind-by-move in patterns and references to those identifiers in guards.
-val BIND_BY_MOVE_PATTERN_GUARDS = CompilerFeature("bind_by_move_pattern_guards", ACTIVE, "1.30.0")
 // Allows `impl Trait` in bindings (`let`, `const`, `static`).
 val IMPL_TRAIT_IN_BINDINGS = CompilerFeature("impl_trait_in_bindings", ACTIVE, "1.30.0")
 // Allows using `reason` in lint attributes and the `#[expect(lint)]` lint check.
@@ -292,7 +282,7 @@ val LINT_REASONS = CompilerFeature("lint_reasons", ACTIVE, "1.31.0")
 // Allows exhaustive integer pattern matching on `usize` and `isize`.
 val PRECISE_POINTER_SIZE_MATCHING = CompilerFeature("precise_pointer_size_matching", ACTIVE, "1.32.0")
 // Allows relaxing the coherence rules such that
-// `impl<T> ForeignTrait<LocalType> for ForeignType<T> is permitted.
+// `impl<T> ForeignTrait<LocalType> for ForeignType<T>` is permitted.
 val RE_REBALANCE_COHERENCE = CompilerFeature("re_rebalance_coherence", ACTIVE, "1.32.0")
 // Allows using `#[ffi_returns_twice]` on foreign functions.
 val FFI_RETURNS_TWICE = CompilerFeature("ffi_returns_twice", ACTIVE, "1.34.0")
@@ -304,8 +294,6 @@ val OPTIMIZE_ATTRIBUTE = CompilerFeature("optimize_attribute", ACTIVE, "1.34.0")
 val C_VARIADIC = CompilerFeature("c_variadic", ACTIVE, "1.34.0")
 // Allows the user of associated type bounds.
 val ASSOCIATED_TYPE_BOUNDS = CompilerFeature("associated_type_bounds", ACTIVE, "1.34.0")
-// Attributes on formal function params.
-val PARAM_ATTRS = CompilerFeature("param_attrs", ACTIVE, "1.36.0")
 // Allows calling constructor functions in `const fn`.
 val CONST_CONSTRUCTOR = CompilerFeature("const_constructor", ACTIVE, "1.37.0")
 // Allows `if/while p && let q = r && ...` chains.
@@ -320,12 +308,14 @@ val ARBITRARY_ENUM_DISCRIMINANT = CompilerFeature("arbitrary_enum_discriminant",
 val MEMBER_CONSTRAINTS = CompilerFeature("member_constraints", ACTIVE, "1.37.0")
 // Allows `async || body` closures.
 val ASYNC_CLOSURE = CompilerFeature("async_closure", ACTIVE, "1.37.0")
-// Allows the use of `#[cfg(doctest)]`, set when rustdoc is collecting doctests
+// Allows the use of `#[cfg(doctest)]`; set when rustdoc is collecting doctests.
 val CFG_DOCTEST = CompilerFeature("cfg_doctest", ACTIVE, "1.37.0")
 // Allows `[x; N]` where `x` is a constant (RFC 2203).
 val CONST_IN_ARRAY_REPEAT_EXPRESSIONS = CompilerFeature("const_in_array_repeat_expressions", ACTIVE, "1.37.0")
 // Allows `impl Trait` to be used inside type aliases (RFC 2515).
 val TYPE_ALIAS_IMPL_TRAIT = CompilerFeature("type_alias_impl_trait", ACTIVE, "1.38.0")
+// Allows the use of or-patterns (e.g., `0 | 1`).
+val OR_PATTERNS = CompilerFeature("or_patterns", ACTIVE, "1.38.0")
 
 // -------------------------------------------------------------------------
 // feature-group-start: for testing purposes
@@ -541,3 +531,11 @@ val TYPE_ALIAS_ENUM_VARIANTS = CompilerFeature("type_alias_enum_variants", ACCEP
 val REPR_ALIGN_ENUM = CompilerFeature("repr_align_enum", ACCEPTED, "1.37.0")
 // Allows `const _: TYPE = VALUE`.
 val UNDERSCORE_CONST_NAMES = CompilerFeature("underscore_const_names", ACCEPTED, "1.37.0")
+// Allows free and inherent `async fn`s, `async` blocks, and `<expr>.await` expressions.
+val ASYNC_AWAIT = CompilerFeature("async_await", ACCEPTED, "1.39.0")
+// Allows mixing bind-by-move in patterns and references to those identifiers in guards.
+val BIND_BY_MOVE_PATTERN_GUARDS = CompilerFeature("bind_by_move_pattern_guards", ACCEPTED, "1.39.0")
+// Allows attributes in formal function parameters.
+val PARAM_ATTRS = CompilerFeature("param_attrs", ACCEPTED, "1.39.0")
+// Allows macro invocations in `extern {}` blocks.
+val MACROS_IN_EXTERN = CompilerFeature("macros_in_extern", ACCEPTED, "1.40.0")
