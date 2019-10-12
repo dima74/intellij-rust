@@ -66,14 +66,14 @@ class RsConsoleView : LanguageConsoleImpl, ObservableConsoleView, RsCodeExecutor
         return centerComponent
     }
 
-    private fun executeInConsole(code: String) {
-        print("Received: '$code'", ProcessOutputTypes.STDERR)
-    }
+//    private fun executeInConsole(code: String) {
+//        print("Received: '$code'\n123\n", ProcessOutputTypes.STDOUT)
+//    }
 
-    override fun print(text: String, outputType: ConsoleViewContentType) {
-        // todo highlighting
-        super.print(text, outputType)
-    }
+//    override fun print(text: String, outputType: ConsoleViewContentType) {
+//        // todo highlighting
+//        super.print(text, outputType)
+//    }
 
     fun print(text: String, attributes: Key<*>) {
         print(text, outputTypeForAttributes(attributes))

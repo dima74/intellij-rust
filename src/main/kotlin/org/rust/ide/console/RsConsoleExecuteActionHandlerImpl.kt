@@ -8,7 +8,6 @@ package org.rust.ide.console
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.execution.console.LanguageConsoleView
 import com.intellij.execution.process.ProcessHandler
-import com.intellij.execution.ui.ConsoleViewContentType
 
 class RsConsoleExecuteActionHandlerImpl(private val myConsoleView: LanguageConsoleView,
                                         processHandler: ProcessHandler) :
@@ -18,7 +17,9 @@ class RsConsoleExecuteActionHandlerImpl(private val myConsoleView: LanguageConso
     override var isEnabled: Boolean = false
 
     override fun processLine(line: String) {
-        myConsoleView.print("Received: '$line'", ConsoleViewContentType.SYSTEM_OUTPUT)
+//        myConsoleView.print("Received: '$line'\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+//        consoleCommunication.execInterpreter(line) {}
+        super.processLine(line)
     }
 
     override fun runExecuteAction(console: LanguageConsoleView) {

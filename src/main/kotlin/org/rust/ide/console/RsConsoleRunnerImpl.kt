@@ -8,10 +8,13 @@ package org.rust.ide.console
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.ExecutionManager
 import com.intellij.execution.Executor
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.console.ConsoleExecuteAction
 import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.process.ProcessHandler
+import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessOutputTypes
+import com.intellij.execution.process.ProcessTerminatedListener
 import com.intellij.execution.runners.AbstractConsoleRunnerWithHistory.registerActionShortcuts
 import com.intellij.execution.runners.ConsoleTitleGen
 import com.intellij.execution.ui.RunContentDescriptor
@@ -27,13 +30,13 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.encoding.EncodingProjectManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.SideBorder
 import com.intellij.util.ui.JBEmptyBorder
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
-import java.io.OutputStream
-import java.util.*
+import java.nio.charset.StandardCharsets
 import javax.swing.BorderFactory
 import javax.swing.JPanel
 
@@ -42,7 +45,8 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     private val myProject: Project
     private val myTitle: String
 
-    protected lateinit var myConsoleExecuteActionHandler: RsConsoleExecuteActionHandler
+    private lateinit var myProcessHandler: RsConsoleProcessHandler
+    private lateinit var myConsoleExecuteActionHandler: RsConsoleExecuteActionHandler
 
     // Console title used during initialization, it can be changed with Rename action
     private var myConsoleInitTitle: String? = null
@@ -163,7 +167,6 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
             LOG.warn("Error running console", e)
             showErrorsInConsole(e)
         }
-
     }
 
     override fun run(requestEditorFocus: Boolean) {
@@ -175,6 +178,7 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
                     indicator.text = "Connecting to console..."
                     try {
                         initAndRun()
+                        connect()
                         if (requestEditorFocus) {
                             myConsoleView!!.requestFocus()
                         }
@@ -194,23 +198,49 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     }
 
     private fun initAndRun() {
+        val commandLineProcess = createProcess()
+        val process = commandLineProcess.process
         UIUtil.invokeAndWaitIfNeeded(Runnable {
             // Init console view
             myConsoleView = createConsoleView()
             myConsoleView.border = SideBorder(JBColor.border(), SideBorder.LEFT)
+            myProcessHandler = RsConsoleProcessHandler(process, myConsoleView, /*myConsoleCommunication, */commandLineProcess.commandLine, StandardCharsets.UTF_8)
 
             myConsoleExecuteActionHandler = createExecuteActionHandler()
 
+            ProcessTerminatedListener.attach(myProcessHandler)
 
-            val consoleView = myConsoleView
+            myProcessHandler.addProcessListener(object : ProcessAdapter() {
+                override fun processTerminated(event: ProcessEvent) {
+                    myConsoleView.isEditable = false
+                }
+            })
 
             // Attach to process
-//            myConsoleView.attachToProcess(myProcessHandler)
+            myConsoleView.attachToProcess(myProcessHandler)
             createContentDescriptorAndActions()
 
             // Run
-//            myProcessHandler.startNotify()
+            myProcessHandler.startNotify()
         })
+    }
+
+    private fun createProcess(): CommandLineProcess {
+        // todo
+        val generalCommandLine = GeneralCommandLine("/home/dima/.cargo/bin/evcxr")
+        generalCommandLine.withCharset(EncodingProjectManager.getInstance(myProject).defaultCharset)
+//        generalCommandLine.withWorkDirectory(myWorkingDir)
+
+//        myConsoleCommunication = RsConsoleCommunication(myProject)
+//        try {
+//            myConsoleCommunication.serve()
+//        } catch (e: Exception) {
+//            myConsoleCommunication.close()
+//            throw ExecutionException(e.message, e)
+//        }
+
+        val process = generalCommandLine.createProcess()
+        return CommandLineProcess(process, generalCommandLine.commandLineString)
     }
 
     private fun connect() {
@@ -238,29 +268,13 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     }
 
     protected fun createExecuteActionHandler(): RsConsoleExecuteActionHandler {
-        val myProcessHandler = object : ProcessHandler() {
-            override fun getProcessInput(): OutputStream? {
-                TODO("not implemented")
-            }
-
-            override fun detachIsDefault(): Boolean {
-                TODO("not implemented")
-            }
-
-            override fun detachProcessImpl() {
-                TODO("not implemented")
-            }
-
-            override fun destroyProcessImpl() {
-                TODO("not implemented")
-            }
-        }
-        val consoleExecuteActionHandler = RsConsoleExecuteActionHandlerImpl(myConsoleView, myProcessHandler/*, myRsConsoleCommunication*/)
+        val consoleExecuteActionHandler = RsConsoleExecuteActionHandlerImpl(myConsoleView, myProcessHandler)
         consoleExecuteActionHandler.isEnabled = false
 //        ConsoleHistoryController(PyConsoleRootType.Companion.getInstance(), "", myConsoleView).install()
         return consoleExecuteActionHandler
     }
 
+    // todo remove
     private fun handshake(): Boolean {
 //        return myPydevConsoleCommunication.handshake()
         return true
@@ -275,3 +289,5 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
         }
     }
 }
+
+private class CommandLineProcess internal constructor(val process: Process, val commandLine: String)
