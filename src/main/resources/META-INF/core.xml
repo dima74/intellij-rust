@@ -867,8 +867,7 @@
             <implementation-class>org.rust.cargo.RustfmtWatcher</implementation-class>
         </component>
         <component>
-            <interface-class>org.rust.ide.console.RsConsoleRunnerFactory</interface-class>
-            <implementation-class>org.rust.ide.console.RsConsoleRunnerFactoryImpl</implementation-class>
+            <implementation-class>org.rust.ide.console.RsConsoleRunnerFactory</implementation-class>
         </component>
     </application-components>
 

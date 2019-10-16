@@ -9,9 +9,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 
-abstract class RsConsoleRunnerFactory {
+class RsConsoleRunnerFactory {
 
-    abstract fun createConsoleRunner(project: Project, contextModule: Module?): RsConsoleRunner
+    fun createConsoleRunner(project: Project, contextModule: Module?): RsConsoleRunner {
+        return RsConsoleRunnerImpl(project)
+    }
 
     companion object {
         fun getInstance(): RsConsoleRunnerFactory =

@@ -244,13 +244,9 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
         return CommandLineProcess(process, commandLine.commandLineString)
     }
 
-    // todo выпилить?
     private fun connect() {
         if (handshake()) {
             ApplicationManager.getApplication().invokeLater {
-                // Propagate console communication to language console
-
-//                consoleView.setConsoleCommunication(myPydevConsoleCommunication)
                 myConsoleView.setExecutionHandler(myConsoleExecuteActionHandler)
 
                 myConsoleExecuteActionHandler.isEnabled = true
@@ -263,8 +259,8 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
         }
     }
 
-    protected fun createExecuteActionHandler(): RsConsoleExecuteActionHandler {
-        val consoleExecuteActionHandler = RsConsoleExecuteActionHandlerImpl(myConsoleView, myProcessHandler, myConsoleCommunication)
+    private fun createExecuteActionHandler(): RsConsoleExecuteActionHandler {
+        val consoleExecuteActionHandler = RsConsoleExecuteActionHandler(myProcessHandler, myConsoleCommunication)
         consoleExecuteActionHandler.isEnabled = false
 //        ConsoleHistoryController(PyConsoleRootType.Companion.getInstance(), "", myConsoleView).install()
         return consoleExecuteActionHandler

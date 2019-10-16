@@ -16,8 +16,8 @@ class RsConsoleCommunication() {
         hasSkippedFirstLine = false
     }
 
-    fun processText(text: String): String {
-        var text = text.replace("\r", "")
+    fun processText(textOriginal: String): String {
+        var text = textOriginal.replace("\r", "")
         if (!hasSkippedFirstLine && text.contains('\n')) {
             text = text.replace('\n', '\r')
             hasSkippedFirstLine = true

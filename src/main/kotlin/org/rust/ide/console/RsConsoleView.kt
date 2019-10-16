@@ -20,7 +20,7 @@ import org.rust.ide.highlight.RsHighlighter
 import org.rust.lang.RsLanguage
 import javax.swing.JComponent
 
-class RsConsoleView : LanguageConsoleImpl, ObservableConsoleView, RsCodeExecutor {
+class RsConsoleView : LanguageConsoleImpl, ObservableConsoleView {
     private lateinit var myExecuteActionHandler: RsConsoleExecuteActionHandler
     private val myRsHighlighter: RsHighlighter
     private val myScheme: EditorColorsScheme
@@ -60,18 +60,8 @@ class RsConsoleView : LanguageConsoleImpl, ObservableConsoleView, RsCodeExecutor
         consoleEditor.gutterComponentEx.revalidate()
         consoleEditor.colorsScheme.setColor(EditorColors.GUTTER_BACKGROUND, consoleEditor.backgroundColor)
 
-        // settings.set
         return centerComponent
     }
-
-//    private fun executeInConsole(code: String) {
-//        print("Received: '$code'\n123\n", ProcessOutputTypes.STDOUT)
-//    }
-
-//    override fun print(text: String, outputType: ConsoleViewContentType) {
-//        // todo highlighting
-//        super.print(text, outputType)
-//    }
 
     fun print(text: String, attributes: Key<*>) {
         print(text, outputTypeForAttributes(attributes))
