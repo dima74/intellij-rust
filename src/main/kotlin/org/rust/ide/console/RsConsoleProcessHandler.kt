@@ -11,7 +11,7 @@ import java.nio.charset.Charset
 
 class RsConsoleProcessHandler(process: Process,
                               private val myConsoleView: RsConsoleView,
-//                              private val myConsoleCommunication: RsConsoleCommunication,
+                              private val consoleCommunication: RsConsoleCommunication,
                               commandLine: String,
                               charset: Charset) : KillableColoredProcessHandler(process, commandLine, charset) {
 
@@ -23,7 +23,8 @@ class RsConsoleProcessHandler(process: Process,
         })
     }
 
-    override fun coloredTextAvailable(text: String, attributes: Key<*>) {
+    override fun coloredTextAvailable(textOriginal: String, attributes: Key<*>) {
+        val text = consoleCommunication.processText(textOriginal)
         myConsoleView.print(text, attributes)
     }
 
@@ -33,8 +34,7 @@ class RsConsoleProcessHandler(process: Process,
     }
 
     override fun isSilentlyDestroyOnClose(): Boolean {
-//        return !myConsoleCommunication.isExecuting()
-        return true
+        return !consoleCommunication.isExecuting
     }
 
     override fun shouldKillProcessSoftly(): Boolean {

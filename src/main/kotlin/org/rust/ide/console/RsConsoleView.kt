@@ -37,8 +37,6 @@ class RsConsoleView : LanguageConsoleImpl, ObservableConsoleView, RsCodeExecutor
 //        todo
 //        consoleEditor.putUserData(RustConsoleAutopopupBlockingHandler.REPL_KEY, Any())
         historyViewer.putUserData(ConsoleViewUtil.EDITOR_IS_CONSOLE_HISTORY_VIEW, true)
-//        todo
-//        super.setPrompt(null)
         super.setPrompt(">> ")
         setUpdateFoldingsEnabled(false)
         myRsHighlighter = RsHighlighter()

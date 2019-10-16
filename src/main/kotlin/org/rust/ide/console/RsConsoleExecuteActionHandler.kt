@@ -8,7 +8,7 @@ abstract class RsConsoleExecuteActionHandler(processHandler: ProcessHandler, pre
 //  abstract fun checkSingleLine(text: String): Boolean
 //  abstract val cantExecuteMessage: String
 //  abstract fun canExecuteNow(): Boolean
-  abstract var isEnabled: Boolean
+    abstract var isEnabled: Boolean
 //  abstract val consoleCommunication: ConsoleCommunication
 //  abstract fun updateConsoleState()
 }

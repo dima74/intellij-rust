@@ -8,7 +8,7 @@ package org.rust.ide.console
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.ExecutionManager
 import com.intellij.execution.Executor
-import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.configurations.PtyCommandLine
 import com.intellij.execution.console.ConsoleExecuteAction
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.process.ProcessAdapter
@@ -30,11 +30,13 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.encoding.EncodingProjectManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.SideBorder
 import com.intellij.util.ui.JBEmptyBorder
 import com.intellij.util.ui.UIUtil
+import org.rust.cargo.project.model.cargoProjects
+import org.rust.cargo.runconfig.command.workingDirectory
+import org.rust.openapiext.withWorkDirectory
 import java.awt.BorderLayout
 import java.nio.charset.StandardCharsets
 import javax.swing.BorderFactory
@@ -45,6 +47,7 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     private val myProject: Project
     private val myTitle: String
 
+    private lateinit var myConsoleCommunication: RsConsoleCommunication
     private lateinit var myProcessHandler: RsConsoleProcessHandler
     private lateinit var myConsoleExecuteActionHandler: RsConsoleExecuteActionHandler
 
@@ -180,7 +183,7 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
                         initAndRun()
                         connect()
                         if (requestEditorFocus) {
-                            myConsoleView!!.requestFocus()
+                            myConsoleView.requestFocus()
                         }
                     } catch (e: Exception) {
                         LOG.warn("Error running console", e)
@@ -200,11 +203,12 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     private fun initAndRun() {
         val commandLineProcess = createProcess()
         val process = commandLineProcess.process
+        myConsoleCommunication = RsConsoleCommunication()
         UIUtil.invokeAndWaitIfNeeded(Runnable {
             // Init console view
             myConsoleView = createConsoleView()
             myConsoleView.border = SideBorder(JBColor.border(), SideBorder.LEFT)
-            myProcessHandler = RsConsoleProcessHandler(process, myConsoleView, /*myConsoleCommunication, */commandLineProcess.commandLine, StandardCharsets.UTF_8)
+            myProcessHandler = RsConsoleProcessHandler(process, myConsoleView, myConsoleCommunication, commandLineProcess.commandLine, StandardCharsets.UTF_8)
 
             myConsoleExecuteActionHandler = createExecuteActionHandler()
 
@@ -226,40 +230,32 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     }
 
     private fun createProcess(): CommandLineProcess {
-        // todo
-        val generalCommandLine = GeneralCommandLine("/home/dima/.cargo/bin/evcxr")
-        generalCommandLine.withCharset(EncodingProjectManager.getInstance(myProject).defaultCharset)
-//        generalCommandLine.withWorkDirectory(myWorkingDir)
+//        todo
+        val arguments = listOf("/home/dima/.cargo/bin/evcxr")
+        val myWorkingDir = myProject.cargoProjects.allProjects.firstOrNull()?.workingDirectory
 
-//        myConsoleCommunication = RsConsoleCommunication(myProject)
-//        try {
-//            myConsoleCommunication.serve()
-//        } catch (e: Exception) {
-//            myConsoleCommunication.close()
-//            throw ExecutionException(e.message, e)
-//        }
+        val commandLine = PtyCommandLine(arguments)
+            .withInitialColumns(PtyCommandLine.MAX_COLUMNS)
+            .withConsoleMode(true)
+            .withCharset(StandardCharsets.UTF_8)
+            .withWorkDirectory(myWorkingDir)
 
-        val process = generalCommandLine.createProcess()
-        return CommandLineProcess(process, generalCommandLine.commandLineString)
+        val process = commandLine.createProcess()
+        return CommandLineProcess(process, commandLine.commandLineString)
     }
 
+    // todo выпилить?
     private fun connect() {
         if (handshake()) {
             ApplicationManager.getApplication().invokeLater {
                 // Propagate console communication to language console
-                val consoleView = myConsoleView!!
 
 //                consoleView.setConsoleCommunication(myPydevConsoleCommunication)
-                consoleView.setExecutionHandler(myConsoleExecuteActionHandler)
-//                myProcessHandler.addProcessListener(object : ProcessAdapter() {
-//                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-//                        consoleView.print(event.text, outputType)
-//                    }
-//                })
+                myConsoleView.setExecutionHandler(myConsoleExecuteActionHandler)
 
                 myConsoleExecuteActionHandler.isEnabled = true
 
-                consoleView.initialized()
+                myConsoleView.initialized()
             }
         } else {
             myConsoleView.print("Couldn't connect to console process.", ProcessOutputTypes.STDERR)
@@ -268,7 +264,7 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     }
 
     protected fun createExecuteActionHandler(): RsConsoleExecuteActionHandler {
-        val consoleExecuteActionHandler = RsConsoleExecuteActionHandlerImpl(myConsoleView, myProcessHandler)
+        val consoleExecuteActionHandler = RsConsoleExecuteActionHandlerImpl(myConsoleView, myProcessHandler, myConsoleCommunication)
         consoleExecuteActionHandler.isEnabled = false
 //        ConsoleHistoryController(PyConsoleRootType.Companion.getInstance(), "", myConsoleView).install()
         return consoleExecuteActionHandler
