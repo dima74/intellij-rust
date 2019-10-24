@@ -231,7 +231,8 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
 
     private fun createProcess(): CommandLineProcess {
 //        todo
-        val arguments = listOf("/home/dima/.cargo/bin/evcxr")
+//        val arguments = listOf("/home/dima/.cargo/bin/evcxr")
+        val arguments = listOf("/home/dima/repl/evcxr/target/debug/evcxr", "--disable-readline")
         val myWorkingDir = myProject.cargoProjects.allProjects.firstOrNull()?.workingDirectory
 
         val commandLine = PtyCommandLine(arguments)
