@@ -77,6 +77,9 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
         val actions = ArrayList<AnAction>()
 
         // todo
+        // rerun
+        // stop
+        // new window
 
         // Console History
 //        actions.add(ConsoleHistoryController.getController(myConsoleView!!).browseHistory)
@@ -261,7 +264,7 @@ class RsConsoleRunnerImpl : RsConsoleRunner {
     }
 
     private fun createExecuteActionHandler(): RsConsoleExecuteActionHandler {
-        val consoleExecuteActionHandler = RsConsoleExecuteActionHandler(myProcessHandler, myConsoleCommunication)
+        val consoleExecuteActionHandler = RsConsoleExecuteActionHandler(myProcessHandler, myConsoleCommunication, myConsoleView)
         consoleExecuteActionHandler.isEnabled = false
 //        ConsoleHistoryController(PyConsoleRootType.Companion.getInstance(), "", myConsoleView).install()
         return consoleExecuteActionHandler

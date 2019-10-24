@@ -10,7 +10,9 @@ import com.intellij.execution.console.LanguageConsoleView
 import com.intellij.execution.console.ProcessBackedConsoleExecuteActionHandler
 import com.intellij.execution.process.ProcessHandler
 
-class RsConsoleExecuteActionHandler(processHandler: ProcessHandler, private val consoleCommunication: RsConsoleCommunication)
+class RsConsoleExecuteActionHandler(processHandler: ProcessHandler,
+                                    private val consoleCommunication: RsConsoleCommunication,
+                                    private val consoleView: RsConsoleView)
     : ProcessBackedConsoleExecuteActionHandler(processHandler, false) {
 
     var isEnabled: Boolean = false
