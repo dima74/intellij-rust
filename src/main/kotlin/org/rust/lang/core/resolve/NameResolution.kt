@@ -1266,7 +1266,7 @@ private fun processLexicalDeclarations(
             }
         }
 
-        is RsBlock -> {
+        is RsBlock, is RsReplCodeFragment -> {
             // We want to filter out
             // all non strictly preceding let declarations.
             //
@@ -1286,7 +1286,12 @@ private fun processLexicalDeclarations(
                 }
 
                 val letDecls = mutableListOf<RsLetDecl>()
-                for (stmt in scope.expandedStmts) {
+                val stmts = when (scope) {
+                    is RsBlock -> scope.expandedStmts
+                    is RsReplCodeFragment -> scope.stmts.toList()
+                    else -> emptyList()  // unreachable
+                }
+                for (stmt in stmts) {
                     if (cameFrom == stmt) break
                     if (stmt is RsLetDecl) {
                         letDecls.add(stmt)
@@ -1299,7 +1304,7 @@ private fun processLexicalDeclarations(
                 }
             }
 
-            return processItemDeclarations(scope, ns, processor, ItemProcessingMode.WITH_PRIVATE_IMPORTS)
+            return processItemDeclarations(scope as RsItemsOwner, ns, processor, ItemProcessingMode.WITH_PRIVATE_IMPORTS)
         }
 
         is RsForExpr -> {

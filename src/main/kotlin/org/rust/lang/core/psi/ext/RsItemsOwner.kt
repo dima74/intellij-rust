@@ -22,6 +22,10 @@ interface RsItemsOwner : RsElement
 
 val RsItemsOwner.itemsAndMacros: Sequence<RsElement>
     get() {
+        if (this is RsReplCodeFragment) {
+            return stmts.asSequence()
+        }
+
         val stubChildren: List<StubElement<*>>? = run {
             when (this) {
                 is RsFile -> {
