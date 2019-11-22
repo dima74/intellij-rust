@@ -19,16 +19,13 @@ import org.rust.lang.RsFileType
 import org.rust.lang.RsLanguage
 import org.rust.lang.core.parser.RustParserUtil.PathParsingMode
 import org.rust.lang.core.parser.RustParserUtil.PathParsingMode.*
-import org.rust.lang.core.psi.ext.RsElement
-import org.rust.lang.core.psi.ext.RsInferenceContextOwner
-import org.rust.lang.core.psi.ext.RsMod
-import org.rust.lang.core.psi.ext.RsNamedElement
+import org.rust.lang.core.psi.ext.*
 import org.rust.lang.core.resolve.Namespace
 
 abstract class RsCodeFragment(
     fileViewProvider: FileViewProvider,
     contentElementType: IElementType,
-    private val context: RsElement
+    open val context: RsElement
 ) : RsFileBase(fileViewProvider), PsiCodeFragment {
 
     constructor(
@@ -121,6 +118,15 @@ class RsExpressionCodeFragment : RsCodeFragment, RsInferenceContextOwner {
 class RsStatementCodeFragment(project: Project, text: CharSequence, context: RsElement)
     : RsCodeFragment(project, text, RsCodeFragmentElementType.STMT, context) {
     val stmt: RsStmt? get() = PsiTreeUtil.getChildOfType(this, RsStmt::class.java)
+}
+
+class RsReplCodeFragment(fileViewProvider: FileViewProvider, override var context: RsElement)
+    : RsCodeFragment(fileViewProvider, RsCodeFragmentElementType.REPL, context),
+      RsInferenceContextOwner, RsItemsOwner {
+    val stmts: Array<RsStmt> get() = PsiTreeUtil.getChildrenOfType(this, RsStmt::class.java) ?: emptyArray()
+    val lastExpr: RsExpr? get() = children.lastOrNull()?.let { it as? RsExpr }
+    val namedElements: Array<RsNamedElement>
+        get() = PsiTreeUtil.getChildrenOfType(this, RsNamedElement::class.java) ?: emptyArray()
 }
 
 class RsTypeReferenceCodeFragment(project: Project, text: CharSequence, context: RsElement)
