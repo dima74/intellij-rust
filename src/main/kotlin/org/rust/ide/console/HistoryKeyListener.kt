@@ -6,10 +6,10 @@
 package org.rust.ide.console
 
 import com.intellij.codeInsight.lookup.LookupManager
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.project.Project
+import org.rust.openapiext.runWriteCommandAction
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import kotlin.math.max
@@ -69,7 +69,7 @@ class HistoryKeyListener(
                 }
 
                 historyPos = max(historyPos - 1, 0)
-                WriteCommandAction.runWriteCommandAction(project) {
+                project.runWriteCommandAction {
                     document.setText(history[historyPos].entryText)
                     EditorUtil.scrollToTheEnd(consoleEditor)
                     prevCaretOffset = 0
@@ -85,8 +85,11 @@ class HistoryKeyListener(
                 }
 
                 historyPos = min(historyPos + 1, history.size)
-                WriteCommandAction.runWriteCommandAction(project) {
-                    document.setText(if (historyPos == history.size) unfinishedCommand else history[historyPos].entryText)
+                project.runWriteCommandAction {
+                    val comamnd =
+                        if (historyPos == history.size) unfinishedCommand
+                        else history[historyPos].entryText
+                    document.setText(comamnd)
                     prevCaretOffset = document.textLength
                     EditorUtil.scrollToTheEnd(consoleEditor)
                 }

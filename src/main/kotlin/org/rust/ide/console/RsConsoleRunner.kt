@@ -19,12 +19,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.TransactionGuard
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.GuiUtils
 import com.intellij.util.ui.MessageCategory
 import com.intellij.util.ui.UIUtil
@@ -32,6 +30,7 @@ import org.rust.cargo.project.model.cargoProjects
 import org.rust.cargo.project.settings.toolchain
 import org.rust.cargo.runconfig.command.workingDirectory
 import org.rust.cargo.toolchain.Cargo
+import org.rust.openapiext.saveAllDocuments
 import java.awt.BorderLayout
 import java.nio.charset.StandardCharsets
 import javax.swing.JPanel
@@ -102,7 +101,7 @@ class RsConsoleRunner(project: Project, title: String) :
 
     fun run(requestEditorFocus: Boolean) {
         if (checkNeedInstallEvcxr()) return
-        TransactionGuard.submitTransaction(project, Runnable { FileDocumentManager.getInstance().saveAllDocuments() })
+        TransactionGuard.submitTransaction(project, Runnable { saveAllDocuments() })
 
         ApplicationManager.getApplication().executeOnPooledThread {
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Connecting to Console", false) {
@@ -204,9 +203,10 @@ class RsConsoleRunner(project: Project, title: String) :
 
         val errorViewPanel = NewErrorTreeViewPanel(project, null, false, false, null)
 
-        val messages = mutableListOf("Can't start evcxr. Please install it using `cargo install evcxr`")
-        if (StringUtil.isNotEmpty(e.message)) {
-            messages += StringUtil.splitByLines(e.message!!)
+        val messages = mutableListOf("Can't start evcxr.")
+        val message = e.message
+        if (message != null && message.isBlank()) {
+            messages += message.lines()
         }
 
 

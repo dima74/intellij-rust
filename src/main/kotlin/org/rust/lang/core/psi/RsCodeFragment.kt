@@ -123,10 +123,9 @@ class RsStatementCodeFragment(project: Project, text: CharSequence, context: RsE
 class RsReplCodeFragment(fileViewProvider: FileViewProvider, override var context: RsElement)
     : RsCodeFragment(fileViewProvider, RsCodeFragmentElementType.REPL, context),
       RsInferenceContextOwner, RsItemsOwner {
-    val stmts: Array<RsStmt> get() = PsiTreeUtil.getChildrenOfType(this, RsStmt::class.java) ?: emptyArray()
+    val stmts: List<RsStmt> get() = childrenOfType()
     val lastExpr: RsExpr? get() = children.lastOrNull()?.let { it as? RsExpr }
-    val namedElements: Array<RsNamedElement>
-        get() = PsiTreeUtil.getChildrenOfType(this, RsNamedElement::class.java) ?: emptyArray()
+    val namedElements: List<RsNamedElement> get() = childrenOfType()
 }
 
 class RsTypeReferenceCodeFragment(project: Project, text: CharSequence, context: RsElement)

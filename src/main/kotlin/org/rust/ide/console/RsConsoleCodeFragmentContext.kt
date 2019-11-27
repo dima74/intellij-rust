@@ -6,9 +6,9 @@
 package org.rust.ide.console
 
 import com.intellij.openapi.project.Project
-import com.intellij.psi.util.PsiTreeUtil
 import org.rust.cargo.project.model.cargoProjects
 import org.rust.lang.core.psi.*
+import org.rust.lang.core.psi.ext.descendantOfTypeStrict
 import org.rust.openapiext.toPsiFile
 
 class RsConsoleCodeFragmentContext {
@@ -45,7 +45,7 @@ class RsConsoleCodeFragmentContext {
             val crateRoot = originalCrateRoot ?: findAnyCrateRoot(project)
             crateRoot?.let { rsFile.originalFile = crateRoot }
 
-            return PsiTreeUtil.findChildOfType(rsFile, RsBlock::class.java)!!
+            return rsFile.descendantOfTypeStrict()!!
         }
 
         private fun findAnyCrateRoot(project: Project): RsFile? {

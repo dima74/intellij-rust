@@ -115,6 +115,7 @@ TypeRefCodeFragment ::= TypeReference?
 ValuePathCodeFragment ::= ValuePathGenericArgs?
 TypePathCodeFragment ::= TypePathGenericArgs?
 ReplCodeFragment ::= (Item | Stmt)* Expr?
+//ReplCodeFragment ::= BlockElement* Expr?
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Attributes
