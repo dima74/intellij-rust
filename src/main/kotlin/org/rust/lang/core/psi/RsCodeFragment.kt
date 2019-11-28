@@ -25,7 +25,8 @@ import org.rust.lang.core.resolve.Namespace
 abstract class RsCodeFragment(
     fileViewProvider: FileViewProvider,
     contentElementType: IElementType,
-    open val context: RsElement
+    open val context: RsElement,
+    forceCachedPsi: Boolean = true
 ) : RsFileBase(fileViewProvider), PsiCodeFragment {
 
     constructor(
@@ -58,7 +59,9 @@ abstract class RsCodeFragment(
     private var isPhysical = true
 
     init {
-        getViewProvider().forceCachedPsi(this)
+        if (forceCachedPsi) {
+            getViewProvider().forceCachedPsi(this)
+        }
         init(TokenType.CODE_FRAGMENT, contentElementType)
     }
 
@@ -121,7 +124,7 @@ class RsStatementCodeFragment(project: Project, text: CharSequence, context: RsE
 }
 
 class RsReplCodeFragment(fileViewProvider: FileViewProvider, override var context: RsElement)
-    : RsCodeFragment(fileViewProvider, RsCodeFragmentElementType.REPL, context),
+    : RsCodeFragment(fileViewProvider, RsCodeFragmentElementType.REPL, context, false),
       RsInferenceContextOwner, RsItemsOwner {
     val stmts: List<RsStmt> get() = childrenOfType()
     val lastExpr: RsExpr? get() = children.lastOrNull()?.let { it as? RsExpr }
