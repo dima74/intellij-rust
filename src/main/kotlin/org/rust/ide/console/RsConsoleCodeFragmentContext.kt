@@ -7,8 +7,12 @@ package org.rust.ide.console
 
 import com.intellij.openapi.project.Project
 import org.rust.cargo.project.model.cargoProjects
-import org.rust.lang.core.psi.*
+import org.rust.lang.core.psi.RsBlock
+import org.rust.lang.core.psi.RsFile
+import org.rust.lang.core.psi.RsPsiFactory
+import org.rust.lang.core.psi.console.RsReplCodeFragment
 import org.rust.lang.core.psi.ext.descendantOfTypeStrict
+import org.rust.lang.core.psi.rustFile
 import org.rust.openapiext.toPsiFile
 
 class RsConsoleCodeFragmentContext {

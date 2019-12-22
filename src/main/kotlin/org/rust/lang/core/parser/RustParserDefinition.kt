@@ -25,6 +25,7 @@ import org.rust.lang.RsDebugInjectionListener
 import org.rust.lang.core.lexer.RsLexer
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.RsElementTypes.STRING_LITERAL
+import org.rust.lang.core.psi.console.RsReplCodeFragment
 import org.rust.lang.core.stubs.RsFileStub
 
 class RustParserDefinition : ParserDefinition {

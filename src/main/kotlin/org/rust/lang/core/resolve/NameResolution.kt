@@ -35,6 +35,7 @@ import org.rust.lang.core.IN_BAND_LIFETIMES
 import org.rust.lang.core.macros.*
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.RsFile.Attributes.*
+import org.rust.lang.core.psi.console.RsReplCodeFragment
 import org.rust.lang.core.psi.ext.*
 import org.rust.lang.core.resolve.NameResolutionTestmarks.crateRootModule
 import org.rust.lang.core.resolve.NameResolutionTestmarks.missingMacroUse
@@ -1295,7 +1296,7 @@ private fun processLexicalDeclarations(
                 val letDecls = mutableListOf<RsLetDecl>()
                 val stmts = when (scope) {
                     is RsBlock -> scope.expandedStmtsAndTailExpr.first
-                    is RsReplCodeFragment -> scope.stmts.toList()
+                    is RsReplCodeFragment -> scope.stmts
                     else -> emptyList()  // unreachable
                 }
                 for (stmt in stmts) {

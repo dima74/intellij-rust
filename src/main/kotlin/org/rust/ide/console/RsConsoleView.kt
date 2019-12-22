@@ -16,7 +16,7 @@ import com.intellij.openapi.util.ActionCallback
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.IdeFocusManager
 import org.rust.lang.RsLanguage
-import org.rust.lang.core.psi.RsReplCodeFragment
+import org.rust.lang.core.psi.console.RsReplCodeFragment
 import org.rust.openapiext.toPsiFile
 import javax.swing.JComponent
 

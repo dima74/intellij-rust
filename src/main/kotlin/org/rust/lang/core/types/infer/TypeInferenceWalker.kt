@@ -10,6 +10,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.util.containers.isNullOrEmpty
 import org.rust.lang.core.macros.MacroExpansion
 import org.rust.lang.core.psi.*
+import org.rust.lang.core.psi.console.RsReplCodeFragment
 import org.rust.lang.core.psi.ext.*
 import org.rust.lang.core.resolve.*
 import org.rust.lang.core.resolve.ref.*
