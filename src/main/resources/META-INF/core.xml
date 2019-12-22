@@ -877,6 +877,10 @@
         <toolWindow id="Rust Console" anchor="bottom" icon="AllIcons.Debugger.Console" canCloseContents="true"
                     factoryClass="org.rust.ide.console.RsConsoleToolWindowFactory" secondary="false"
                     conditionClass="org.rust.ide.console.RsConsoleToolWindowFactory"/>
+        <projectService serviceImplementation="org.rust.ide.console.RsConsoleOptions"/>
+
+        <consoleHistoryModelProvider implementation="org.rust.ide.console.RsConsoleHistoryModelProvider"/>
+        <scratch.rootType implementation="org.rust.ide.console.RsConsoleRootType"/>
 
     </extensions>
 
