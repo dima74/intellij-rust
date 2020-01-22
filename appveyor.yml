@@ -16,6 +16,7 @@ install:
   - rustup component add rust-src
   - rustup component add clippy-preview
   - rustup component add rustfmt-preview
+  - cargo install evcxr_repl
   - for /f "delims=*" %%a in ('rustc --print sysroot') do (Mklink /D "C:\Users\appveyor\.rust-src" "%%a\lib\rustlib\src\rust\src\")
 
 build_script:
