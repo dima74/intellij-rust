@@ -101,3 +101,21 @@ class PrintAction(private val consoleView: RsConsoleView) : DumbAwareAction() {
         }
     }
 }
+
+class ShowVarsAction(private val consoleView: RsConsoleView)
+    : ToggleAction("Show Variables", "Shows active console variables", AllIcons.Debugger.Watch), DumbAware {
+
+    override fun isSelected(e: AnActionEvent): Boolean {
+        return consoleView.options.isShowVars
+    }
+
+    override fun setSelected(e: AnActionEvent, state: Boolean) {
+        consoleView.options.isShowVars = state
+
+        if (state) {
+            consoleView.showVariables()
+        } else {
+            consoleView.restoreWindow()
+        }
+    }
+}

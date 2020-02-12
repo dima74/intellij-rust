@@ -8,16 +8,21 @@ package org.rust.ide.console
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFileFactory
 import com.intellij.ui.GuiUtils
 import org.rust.cargo.project.model.cargoProjects
+import org.rust.lang.RsLanguage
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.ext.descendantOfTypeStrict
+import org.rust.openapiext.document
 import org.rust.openapiext.toPsiFile
 
-class RsConsoleCodeFragmentContext {
+class RsConsoleCodeFragmentContext(project: Project) {
 
     private val topLevelElements: MutableMap<String, String> = mutableMapOf()
     private val allCommandsText: StringBuilder = StringBuilder()
+    val variablesFile: RsReplCodeFragment = PsiFileFactory.getInstance(project)
+        .createFileFromText(RsConsoleView.VIRTUAL_FILE_NAME, RsLanguage, "") as RsReplCodeFragment
 
     fun addToContext(lastCommandContext: RsConsoleOneCommandContext) {
         topLevelElements.putAll(lastCommandContext.topLevelElements)
@@ -29,6 +34,7 @@ class RsConsoleCodeFragmentContext {
 
         GuiUtils.invokeLaterIfNeeded({
             ApplicationManager.getApplication().runWriteAction {
+                variablesFile.virtualFile.document?.setText(allCommandsText)
                 codeFragment.context = createContext(project, codeFragment.crateRoot as RsFile?, allCommandsText)
             }
         }, ModalityState.defaultModalityState())
