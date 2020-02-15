@@ -16,10 +16,7 @@ import org.rust.cargo.project.model.CargoProject
 import org.rust.cargo.project.model.cargoProjects
 import org.rust.cargo.project.workspace.CargoWorkspace
 import org.rust.lang.core.completion.getOriginalOrSelf
-import org.rust.lang.core.psi.RsConstant
-import org.rust.lang.core.psi.RsEnumVariant
-import org.rust.lang.core.psi.RsFile
-import org.rust.lang.core.psi.rustFile
+import org.rust.lang.core.psi.*
 import org.rust.lang.core.resolve.Namespace
 import org.rust.lang.core.resolve.processNestedScopesUpwards
 import org.rust.openapiext.toPsiFile
