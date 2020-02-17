@@ -5,11 +5,13 @@
 
 package org.rust.ide.console
 
-import com.intellij.execution.process.KillableColoredProcessHandler
+import com.intellij.execution.process.AnsiEscapeDecoder
+import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.BaseOutputReader
+import org.rust.cargo.runconfig.RsAnsiEscapeDecoder
 import java.nio.charset.Charset
 
 class RsConsoleProcessHandler(
@@ -18,7 +20,10 @@ class RsConsoleProcessHandler(
     private val consoleCommunication: RsConsoleCommunication,
     commandLine: String,
     charset: Charset
-) : KillableColoredProcessHandler(process, commandLine, charset) {
+) : KillableProcessHandler(process, commandLine, charset), AnsiEscapeDecoder.ColoredTextAcceptor {
+
+
+    private val decoder: AnsiEscapeDecoder = RsAnsiEscapeDecoder()
 
     init {
         Disposer.register(consoleView, Disposable {
@@ -26,6 +31,10 @@ class RsConsoleProcessHandler(
                 destroyProcess()
             }
         })
+    }
+
+    override fun notifyTextAvailable(text: String, outputType: Key<*>) {
+        decoder.escapeText(text, outputType, this)
     }
 
     override fun coloredTextAvailable(textOriginal: String, attributes: Key<*>) {
