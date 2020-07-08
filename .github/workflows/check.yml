@@ -6,6 +6,7 @@ on:
             - master
             - staging
             - trying
+            - diralik/ci-cache-evcxr
     pull_request:
 
 jobs:
@@ -54,6 +55,12 @@ jobs:
               with:
                   profile: minimal
                   toolchain: nightly
+
+            - name: Cache ~/.cargo
+              uses: actions/cache@v2
+              with:
+                  path: ~/.cargo
+                  key: ${{ runner.os }}-cargo
 
             - name: Install evcxr
               if: matrix.os != 'windows-latest' && matrix.rust-version >= '1.40.0' # BACKCOMPAT: Rust 1.39.0
