@@ -11,7 +11,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiWhiteSpace
 import org.rust.cargo.project.workspace.PackageOrigin
-import org.rust.lang.core.psi.ext.asTrivial
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.ext.*
 
@@ -40,7 +39,7 @@ class RsImportOptimizer : ImportOptimizer {
         externCrateItems.forEach { it.delete() }
     }
 
-    private fun executeForUseItem(mod: RsMod) {
+    fun executeForUseItem(mod: RsMod) {
         val uses = mod.childrenOfType<RsUseItem>()
         if (uses.isNotEmpty()) {
             replaceOrderOfUseItems(mod, uses)
@@ -51,7 +50,7 @@ class RsImportOptimizer : ImportOptimizer {
 
     companion object {
 
-        private fun optimizeUseSpeck(psiFactory: RsPsiFactory, useSpeck: RsUseSpeck) {
+        fun optimizeUseSpeck(psiFactory: RsPsiFactory, useSpeck: RsUseSpeck) {
             if (removeCurlyBraces(psiFactory, useSpeck)) return
             val useSpeckList = useSpeck.useGroup?.useSpeckList ?: return
             if (useSpeckList.size < 2) return

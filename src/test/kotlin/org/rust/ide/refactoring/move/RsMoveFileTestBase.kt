@@ -9,7 +9,6 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.util.EmptyRunnable
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiElement
 import com.intellij.util.containers.map2Array
 import org.intellij.lang.annotations.Language
 import org.rust.RsTestBase
@@ -24,16 +23,23 @@ abstract class RsMoveFileTestBase : RsTestBase() {
         targetDirectory: String,
         searchForReferences: Boolean = true
     ) {
-        val psiElementsToMove: Array<PsiElement> = elementsToMove.map2Array {
+        val psiElementsToMove = elementsToMove.map2Array {
             val virtualFile = rootDirectory.findFileByRelativePath(it)!!
-            if (virtualFile.isDirectory) virtualFile.toPsiDirectory(project)!! else virtualFile.toPsiFile(project)!!
+            if (virtualFile.isDirectory) {
+                virtualFile.toPsiDirectory(project)!!
+            } else {
+                virtualFile.toPsiFile(project)!!
+            }
         }
 
         if (targetDirectory != ".") {
             runWriteAction { VfsUtil.createDirectoryIfMissing(rootDirectory, targetDirectory) }
         }
         val psiTargetDirectory = rootDirectory.findFileByRelativePath(targetDirectory)!!.toPsiDirectory(project)!!
-        RsMoveFilesOrDirectoriesDialog(project, psiElementsToMove, null, null)
+
+        val psiElementsToMoveAdjusted = RsMoveFilesOrDirectoriesHandler()
+            .adjustForMove(project, psiElementsToMove, psiTargetDirectory)!!
+        RsMoveFilesOrDirectoriesDialog(project, psiElementsToMoveAdjusted, null, null)
             .doPerformMove(psiTargetDirectory, searchForReferences, EmptyRunnable.INSTANCE)
     }
 
@@ -66,7 +72,7 @@ abstract class RsMoveFileTestBase : RsTestBase() {
         elementsToMove: Array<String>,
         targetDirectory: String,
         @Language("Rust") source: String
-    ) = checkByDirectory(source, source) { testProject ->
+    ) = checkByDirectory(source, source, expectError = true) { testProject ->
         performMove(testProject.root, elementsToMove, targetDirectory)
     }
 }

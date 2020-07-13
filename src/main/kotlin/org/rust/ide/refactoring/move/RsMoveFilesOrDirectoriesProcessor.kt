@@ -5,238 +5,113 @@
 
 package org.rust.ide.refactoring.move
 
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
-import com.intellij.psi.util.parentOfType
-import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.move.MoveCallback
-import com.intellij.refactoring.move.MoveMultipleElementsViewDescriptor
 import com.intellij.refactoring.move.moveFilesOrDirectories.MoveFilesOrDirectoriesProcessor
 import com.intellij.usageView.UsageInfo
-import com.intellij.usageView.UsageViewDescriptor
 import com.intellij.util.IncorrectOperationException
 import com.intellij.util.containers.MultiMap
 import org.rust.ide.inspections.import.lastElement
-import org.rust.ide.refactoring.move.common.RsMoveReferenceInfo
-import org.rust.ide.refactoring.move.common.RsMoveRetargetReferencesProcessor
+import org.rust.ide.refactoring.move.common.ModToMove
+import org.rust.ide.refactoring.move.common.RsModDeclUsageInfo
+import org.rust.ide.refactoring.move.common.RsMoveCommonProcessor
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.ext.*
-import org.rust.openapiext.runWithCancelableProgress
 
-/**
- * Move refactoring currently supports moving a single file without submodules.
- * It consists of these steps:
- * - Check visibility conflicts (target of any reference should remain accessible after move)
- * - Update `pub(in path)` visibility modifiers in moved file if necessary
- * - Move mod-declaration to new parent mod
- * - Update necessary imports in other files
- * - Update necessary paths in other files (some usages could still remain invalid because of glob-imports)
- *     We replace path with absolute if there are few usages of this path in the file, otherwise add new import
- * - Update relative paths in moved file
- */
+// see overview of move refactoring in comment for `RsMoveCommonProcessor`
 class RsMoveFilesOrDirectoriesProcessor(
     private val project: Project,
-    private val elementsToMove: Array<PsiElement>,
-    private val newParent: PsiDirectory,
-    private val newParentMod: RsMod,
-    moveCallback: MoveCallback?,
+    filesOrDirectoriesToMove: Array<out PsiElement /* PsiDirectory or RsFile */>,
+    newParent: PsiDirectory,
+    private val targetMod: RsMod,
+    private val moveCallback: MoveCallback?,
     doneCallback: Runnable
 ) : MoveFilesOrDirectoriesProcessor(
     project,
-    elementsToMove,
+    filesOrDirectoriesToMove,
     newParent,
     true,
     true,
     true,
-    moveCallback,
+    null,  // we use `moveCallback` directly in `performRefactoring`
     doneCallback
 ) {
 
-    private val psiFactory = RsPsiFactory(project)
-    private val movedFile: RsFile = elementsToMove[0] as RsFile
-    private val oldParentMod: RsMod = movedFile.`super` ?: error("Can't find parent mod of moved file")
+    private val filesToMove: Set<RsFile> = filesOrDirectoriesToMove
+        .map {
+            // we checked that `adjustForMove` returns not null in `RsMoveFilesOrDirectoriesHandler#canMove`
+            it.adjustForMove()
+                ?: error("File or directory $it can't be moved")
+        }
+        .toSet()
 
-    // keys --- `RsPath`s inside movedFile
-    // outsideReferencesMap[path] --- target element for path reference
-    private lateinit var outsideReferencesMap: Map<RsPath, RsElement>
-    private lateinit var conflictsDetector: RsMoveFilesOrDirectoriesConflictsDetector
+    private val elementsToMove = filesToMove.map { ModToMove(it) }
+    private val commonProcessor: RsMoveCommonProcessor = RsMoveCommonProcessor(project, elementsToMove, targetMod)
 
-    override fun doRun() {
-        checkMove()
-        super.doRun()
-    }
-
-    private fun checkMove() {
-        // TODO: support move multiple files
-        check(elementsToMove.size == 1)
-
-        check(newParentMod.crateRoot == movedFile.crateRoot)
-        movedFile.modName?.let {
-            if (newParentMod.getChildModule(it) != null) {
+    init {
+        for (file in filesToMove) {
+            val modName = file.modName ?: continue
+            if (targetMod.getChildModule(modName) != null) {
                 throw IncorrectOperationException("Cannot move. Mod with same crate relative path already exists")
             }
         }
     }
 
+    override fun findUsages(): Array<out UsageInfo> = commonProcessor.findUsages()
+
     override fun preprocessUsages(refUsages: Ref<Array<UsageInfo>>): Boolean {
         val usages = refUsages.get()
         val conflicts = MultiMap<PsiElement, String>()
+        checkSingleModDeclaration(usages)
+        return commonProcessor.preprocessUsages(usages, conflicts) && showConflicts(conflicts, usages)
+    }
 
-        val message = RefactoringBundle.message("detecting.possible.conflicts")
-        val success = project.runWithCancelableProgress(message) {
-            runReadAction {
-                detectVisibilityProblems(usages, conflicts)
+    private fun checkSingleModDeclaration(usages: Array<UsageInfo>) {
+        val modDeclarationsByFile = usages
+            .filterIsInstance<RsModDeclUsageInfo>()
+            .groupBy { it.file }
+        for (file in filesToMove) {
+            val modDeclarations = modDeclarationsByFile[file]
+                ?: error("Can't move ${file.name}.\nIt is not included in module tree")
+            if (modDeclarations.size > 1) {
+                error("Can't move ${file.name}.\nIt is declared in more than one parent modules")
             }
         }
-        if (!success) return false
-
-        return showConflicts(conflicts, usages)
-    }
-
-    private fun detectVisibilityProblems(usages: Array<UsageInfo>, conflicts: MultiMap<PsiElement, String>) {
-        outsideReferencesMap = collectOutsideReferencesFromMovedFile()
-        conflictsDetector = RsMoveFilesOrDirectoriesConflictsDetector(movedFile, newParentMod, outsideReferencesMap)
-        conflictsDetector.detectVisibilityProblems(usages, conflicts)
-    }
-
-    private fun collectOutsideReferencesFromMovedFile(): MutableMap<RsPath, RsElement> {
-        val paths = movedFile.descendantsOfType<RsPath>()
-        val outsideReferencesMap = mutableMapOf<RsPath, RsElement>()
-        for (path in paths) {
-            val target = path.reference?.resolve() ?: continue
-            // ignore references from child modules of moved file
-            if (target.isInsideModSubtree(movedFile)) continue
-
-            outsideReferencesMap[path] = target
-        }
-        return outsideReferencesMap
     }
 
     override fun performRefactoring(usages: Array<out UsageInfo>) {
-        val (oldModDeclarations, useDirectiveUsages, otherUsages) = groupUsages(usages)
+        val oldModDeclarations = usages.filterIsInstance<RsModDeclUsageInfo>()
+        commonProcessor.performRefactoring(usages) {
+            moveFilesAndModDeclarations(oldModDeclarations)
+            // after move `RsFile`s remain valid
+            elementsToMove
+        }
+        moveCallback?.refactoringCompleted()
+    }
 
-        updateReferencesInMovedFileBeforeMove()
-
-        // step 1: move file and its mod-declaration
+    private fun moveFilesAndModDeclarations(oldModDeclarations: List<RsModDeclUsageInfo>) {
         moveModDeclaration(oldModDeclarations)
         super.performRefactoring(emptyArray())
 
-        check(!movedFile.crateRelativePath.isNullOrEmpty())
-        { "${movedFile.name} had correct crateRelativePath before moving mod-declaration, but empty/null after move" }
-
-        // step 2:
-        // a) update references in use-directives
-        // b) some usages could still remain invalid (because of glob-imports)
-        //    so we should add new import, or replace reference path with absolute one
-        retargetUsages(useDirectiveUsages + otherUsages)
-
-        // step 3: retarget references from moved file to outside
-        updateReferencesInMovedFileAfterMove()
-    }
-
-    private fun groupUsages(usages: Array<out UsageInfo>): Triple<List<UsageInfo>, List<UsageInfo>, MutableList<UsageInfo>> {
-        val oldModDeclarations = mutableListOf<UsageInfo>()
-        val useDirectiveUsages = mutableListOf<UsageInfo>()
-        val otherUsages = mutableListOf<UsageInfo>()
-        for (usage in usages) {
-            // ignore strange usages
-            if (usage.element == null || usage.reference == null) continue
-
-            when {
-                usage.element is RsModDeclItem -> oldModDeclarations.add(usage)
-                usage.element!!.parentOfType<RsUseItem>() != null -> useDirectiveUsages.add(usage)
-                else -> otherUsages.add(usage)
-            }
-        }
-
-        // files not included in module tree are filtered in RsMoveFilesOrDirectoriesHandler::canMove
-        // by check file.crateRoot != null
-        check(oldModDeclarations.isNotEmpty())
-        if (oldModDeclarations.size > 1) {
-            val message = "Can't move ${movedFile.name}.\nIt is declared in more than one parent modules"
-            throw IncorrectOperationException(message)
-        }
-
-        return Triple(oldModDeclarations, useDirectiveUsages, otherUsages)
-    }
-
-    private fun moveModDeclaration(oldModDeclarations: List<UsageInfo>) {
-        check(oldModDeclarations.size == 1)
-        val oldModDeclaration = oldModDeclarations[0].element as RsModDeclItem
-
-        when (oldModDeclaration.visibility) {
-            is RsVisibility.Private -> {
-                if (conflictsDetector.shouldMakeMovedFileModDeclarationPublic) {
-                    oldModDeclaration.addAfter(psiFactory.createPub(), null)
-                }
-            }
-            is RsVisibility.Restricted -> run {
-                val visRestriction = oldModDeclaration.vis?.visRestriction ?: return@run
-                visRestriction.updateScopeIfNecessary(psiFactory, newParentMod)
-            }
-        }
-        val newModDeclaration = oldModDeclaration.copy()
-
-        oldModDeclaration.delete()
-        newParentMod.insertModDecl(psiFactory, newModDeclaration)
-    }
-
-    private fun retargetUsages(usages: List<UsageInfo>) {
-        val references = usages.mapNotNull { usage ->
-            val pathOld = usage.element as? RsPath ?: return@mapNotNull null
-            val pathNewText = movedFile.qualifiedNameRelativeTo(pathOld.containingMod) ?: return@mapNotNull null
-            val pathNew = psiFactory.tryCreatePath(pathNewText) ?: return@mapNotNull null
-            RsMoveReferenceInfo(pathOld, pathNew, movedFile)
-        }
-        RsMoveRetargetReferencesProcessor(project, oldParentMod, newParentMod).retargetReferences(references)
-    }
-
-    private fun updateReferencesInMovedFileBeforeMove() {
-        for ((path, _) in outsideReferencesMap) {
-            val visRestriction = path.parent as? RsVisRestriction ?: continue
-            visRestriction.updateScopeIfNecessary(psiFactory, newParentMod)
+        for (file in filesToMove) {
+            check(!file.crateRelativePath.isNullOrEmpty())
+            { "${file.name} had correct crateRelativePath before moving mod-declaration, but empty/null after move" }
         }
     }
 
-    private fun updateReferencesInMovedFileAfterMove() {
-        // we should update `super::...` paths in movedFile
-        // but in direct submodules of movedFile we should update only `super::super::...` paths
-        // and so on
-
-        for ((path, target) in outsideReferencesMap) {
-            val pathParent = path.parent
-            if (pathParent is RsVisRestriction) continue
-            if (pathParent is RsPath && pathParent.hasOnlySuperSegments()) continue
-            if (!path.hasOnlySuperSegments()) continue
-
-            val targetModPath = (target as? RsMod)?.crateRelativePath ?: continue
-            val pathNew = psiFactory.tryCreatePath("crate$targetModPath") ?: continue
-            path.replace(pathNew)
+    private fun moveModDeclaration(oldModDeclarationsAll: List<RsModDeclUsageInfo>) {
+        val psiFactory = RsPsiFactory(project)
+        for ((_ /* file */, oldModDeclarations) in oldModDeclarationsAll.groupBy { it.file }) {
+            val oldModDeclaration = oldModDeclarations.single().element
+            commonProcessor.updateMovedItemVisibility(oldModDeclaration)
+            val newModDeclaration = oldModDeclaration.copy()
+            oldModDeclaration.delete()
+            targetMod.insertModDecl(psiFactory, newModDeclaration)
         }
     }
-
-    override fun createUsageViewDescriptor(usages: Array<out UsageInfo>): UsageViewDescriptor {
-        return MoveMultipleElementsViewDescriptor(elementsToMove, newParent.name)
-    }
-}
-
-fun RsElement.isInsideModSubtree(mod: RsMod): Boolean = containingMod.superMods.contains(mod)
-
-// updates `pub(in path)` visibility modifier
-// `path` must be a parent module of the item whose visibility is being declared,
-// so we replace `path` with common parent module of `newParent` and old `path`
-private fun RsVisRestriction.updateScopeIfNecessary(psiFactory: RsPsiFactory, newParent: RsMod) {
-    val oldScope = path.reference?.resolve() as? RsMod ?: return
-    val newScope = commonParentMod(oldScope, newParent) ?: return
-    if (newScope == oldScope) return
-    val newScopePath = newScope.crateRelativePath ?: return
-
-    check(crateRoot == newParent.crateRoot)
-    val newVisRestriction = psiFactory.createVisRestriction("crate$newScopePath")
-    replace(newVisRestriction)
 }
 
 private fun RsMod.insertModDecl(psiFactory: RsPsiFactory, modDecl: PsiElement) {
@@ -252,9 +127,4 @@ private fun RsMod.insertModDecl(psiFactory: RsPsiFactory, modDecl: PsiElement) {
     if (modDecl.nextSibling == null) {
         addAfter(psiFactory.createNewline(), modDecl)
     }
-}
-
-fun RsPath.hasOnlySuperSegments(): Boolean {
-    if (`super` == null) return false
-    return path?.hasOnlySuperSegments() ?: true
 }
