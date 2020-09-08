@@ -1,6 +1,10 @@
 name: regressions
 
-on: [ workflow_dispatch, pull_request ]
+on:
+    pull_request:
+    workflow_dispatch:
+        branches-ignore:
+            - master
 
 jobs:
     calculate-base-commit:
@@ -36,6 +40,9 @@ jobs:
                   git log ${{ github.sha }} -n 1 --pretty=short
                   echo "base commit:"
                   git log ${{ steps.base-commit.outputs.base-commit }} -n 1 --pretty=short
+
+#            - name: Check commits not equal
+#              run: [ ${{ github.sha }} == ${{ steps.base-commit.outputs.base-commit }} ] && echo "Commits must be different" && exit 1
 
     check:
         needs: [ calculate-base-commit ]
