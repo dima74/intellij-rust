@@ -1,6 +1,6 @@
 name: regressions
 
-on: [ workflow_dispatch, pull_request ]
+on: [ workflow_dispatch, pull_request, push ]
 
 jobs:
     calculate-base-commit:
@@ -16,7 +16,7 @@ jobs:
             # So, we need to find the latest common commit for master branch and chosen one
             # to calculate difference only for branch changes
             - name: Calculate base commit for workflow_dispatch event
-              if: github.event_name == 'workflow_dispatch'
+              if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
               run: echo "::set-env name=BASE_COMMIT::$(git merge-base origin/master ${{ github.sha }})"
 
             # For pull request event, GitHub produces additional merge commit with `master` branch and PR branch as parents
