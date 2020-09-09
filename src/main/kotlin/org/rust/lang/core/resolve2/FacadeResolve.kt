@@ -77,7 +77,7 @@ fun processItemDeclarations2(
         val values = perNs.values?.tryConvertToPsi(Namespace.Values)
         val macros = perNs.macros?.tryConvertToPsi(Namespace.Macros)
         // we need setOf here because item could belong to multiple namespaces (e.g. unit struct)
-        for (element in setOf(types, values, macros)) {
+        for (element in listOf(types, values, macros)) {
             if (element === null) continue
             processor(name, element) && return@processEntriesWithName true
         }
