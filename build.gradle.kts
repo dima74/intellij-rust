@@ -248,6 +248,7 @@ project(":") {
     val testOutput = configurations.create("testOutput")
 
     dependencies {
+        compileOnly(kotlin("stdlib-jdk8"))
         implementation(project(":common"))
         implementation("org.jetbrains:markdown:0.1.30") {
             exclude(module = "kotlin-runtime")
