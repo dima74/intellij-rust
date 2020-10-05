@@ -345,9 +345,9 @@ object CargoMetadata {
         features: List<CargoWorkspace.Feature>,
         buildScriptMessage: BuildScriptMessage?
     ): CargoWorkspaceData.Package? {
-        val root = checkNotNull(fs.refreshAndFindFileByPath(PathUtil.getParentPath(manifest_path))?.canonicalFile) {
-            "`cargo metadata` reported a package which does not exist at `$manifest_path`"
-        }
+        val root = fs.refreshAndFindFileByPath(PathUtil.getParentPath(manifest_path))
+            ?.let { if (source == null) it else it.canonicalFile }
+        checkNotNull(root) { "`cargo metadata` reported a package which does not exist at `$manifest_path`" }
 
         val cfgOptions = CfgOptions.parse(buildScriptMessage?.cfgs.orEmpty())
 
@@ -424,6 +424,37 @@ object CargoMetadata {
         Edition.EDITION_2018.presentation -> Edition.EDITION_2018
         else -> Edition.EDITION_2015
     }
+
+    fun Project.replaceSymlink(replacer: (String) -> String): Project =
+        copy(
+            packages = packages.map { it.replaceSymlink(replacer) },
+            resolve = resolve.replaceSymlink(replacer),
+            workspace_members = workspace_members?.map(replacer),
+            workspace_root = replacer(workspace_root)
+        )
+
+    private fun Package.replaceSymlink(replacer: (String) -> String): Package =
+        copy(
+            id = replacer(id),
+            manifest_path = replacer(manifest_path),
+            targets = targets.map { it.replaceSymlink(replacer) }
+        )
+
+    private fun Resolve.replaceSymlink(replacer: (String) -> String): Resolve =
+        copy(nodes = nodes.map { it.replaceSymlink(replacer) })
+
+    private fun Target.replaceSymlink(replacer: (String) -> String): Target =
+        copy(src_path = replacer(src_path))
+
+    private fun ResolveNode.replaceSymlink(replacer: (String) -> String): ResolveNode =
+        copy(
+            id = replacer(id),
+            dependencies = dependencies.map(replacer),
+            deps = deps?.map { it.replaceSymlink(replacer) }
+        )
+
+    private fun Dep.replaceSymlink(replacer: (String) -> String): Dep =
+        copy(pkg = replacer(pkg))
 }
 
 private class PackageVariables(private val variables: Map<PackageInfo, Map<String, String>>) {

@@ -38,6 +38,7 @@ import org.rust.cargo.toolchain.Rustup.Companion.checkNeedInstallClippy
 import org.rust.cargo.toolchain.impl.BuildScriptsInfo
 import org.rust.cargo.toolchain.impl.CargoBuildPlan
 import org.rust.cargo.toolchain.impl.CargoMetadata
+import org.rust.cargo.toolchain.impl.CargoMetadata.replaceSymlink
 import org.rust.ide.actions.InstallBinaryCrateAction
 import org.rust.ide.experiments.RsExperiments
 import org.rust.ide.notifications.showBalloon
@@ -156,7 +157,7 @@ class Cargo(private val cargoExecutable: Path, private val rustcExecutable: Path
 
         val normalisedWorkspace = projectDirectory.normalize().toString()
 
-        return project.copy(workspace_root = normalisedWorkspace)
+        return project.replaceSymlink { it.replace(workspaceRoot, normalisedWorkspace) }
     }
 
     private fun fetchBuildScriptsInfo(
