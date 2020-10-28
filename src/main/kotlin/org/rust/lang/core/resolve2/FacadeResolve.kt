@@ -27,6 +27,7 @@ import org.rust.openapiext.toPsiFile
 
 val isNewResolveEnabled: Boolean
     get() = isFeatureEnabled(RsExperiments.RESOLVE_NEW_ENGINE)
+        || System.getenv("INTELLIJ_RUST_FORCE_USE_NEW_RESOLVE") != null
 
 /** null return value means that new resolve can't be used */
 fun processItemDeclarations2(

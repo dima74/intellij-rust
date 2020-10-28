@@ -5,6 +5,7 @@
 
 package org.rust.lang.core.resolve
 
+import org.rust.IgnoreInNewResolve
 import org.rust.MockEdition
 import org.rust.cargo.project.workspace.CargoWorkspace.Edition
 import org.rust.stdext.BothEditions
@@ -223,6 +224,7 @@ class RsUseResolveTest : RsResolveTestBase() {
         }
     """)
 
+    @IgnoreInNewResolve
     fun `test wildcard`() = checkByCode("""
         mod a {
             fn foo() {}
@@ -489,6 +491,7 @@ class RsUseResolveTest : RsResolveTestBase() {
         }
     """)
 
+    @IgnoreInNewResolve
     fun `test star imports do not leak`() = checkByCode("""
         fn foo() {}
         mod m {

@@ -3551,6 +3551,7 @@ class RsErrorAnnotatorTest : RsAnnotatorTestBase(RsErrorAnnotator::class) {
         struct Test(i32);
     """)
 
+    @IgnoreInNewResolve
     @ProjectDescriptor(WithDependencyRustProjectDescriptor::class)
     fun `test custom repr proc macro attr`() = checkByFileTree("""
     //- dep-proc-macro/lib.rs
@@ -3569,6 +3570,7 @@ class RsErrorAnnotatorTest : RsAnnotatorTestBase(RsErrorAnnotator::class) {
         type Foo = i32;
     """)
 
+    @IgnoreInNewResolve
     @ProjectDescriptor(WithDependencyRustProjectDescriptor::class)
     fun `test custom start proc macro attr`() = checkByFileTree("""
     //- dep-proc-macro/lib.rs
@@ -3587,6 +3589,7 @@ class RsErrorAnnotatorTest : RsAnnotatorTestBase(RsErrorAnnotator::class) {
         type Foo = i32;
     """)
 
+    @IgnoreInNewResolve
     @ProjectDescriptor(WithDependencyRustProjectDescriptor::class)
     fun `test custom inline proc macro attr`() = checkByFileTree("""
     //- dep-proc-macro/lib.rs
