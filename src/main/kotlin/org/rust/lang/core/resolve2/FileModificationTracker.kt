@@ -80,7 +80,6 @@ private class ModDataLight {
     fun sort() {
         items.sortBy { it.name }
         imports.sortWith(compareBy(Arrays::compare) { it.usePath })
-        // TODO: Smart sort for macro calls & defs
     }
 }
 
