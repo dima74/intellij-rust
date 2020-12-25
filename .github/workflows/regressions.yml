@@ -1,6 +1,6 @@
 name: regressions
 
-on: [ workflow_dispatch, pull_request ]
+on: [ workflow_dispatch, pull_request, push ]
 
 jobs:
     calculate-base-commit:
@@ -16,7 +16,7 @@ jobs:
             # So, we need to find the latest common commit for master branch and chosen one
             # to calculate difference only for branch changes
             - name: Calculate base commit for workflow_dispatch event
-              if: github.event_name == 'workflow_dispatch'
+              if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
               run: echo "BASE_COMMIT=$(git merge-base origin/master ${{ github.sha }})" >> $GITHUB_ENV
 
             # For pull request event, GitHub produces additional merge commit with `master` branch and PR branch as parents
@@ -45,14 +45,36 @@ jobs:
             fail-fast: false
             matrix:
                 batch:
-                    - name: regressions-1
-                      projects:
-                          - name: cargo
-                            repository: rust-lang/cargo
-                          - name: tokio
-                            repository: tokio-rs/tokio
-                          - name: amethyst
-                            repository: amethyst/amethyst
+                    -   name: regressions-cargo
+                        projects:
+                            -   name: cargo
+                                path: cargo
+                                repository: rust-lang/cargo
+                    -   name: regressions-mysql_async
+                        projects:
+                            -   name: mysql_async
+                                path: mysql_async
+                                repository: blackbeam/mysql_async
+                    -   name: regressions-tokio
+                        projects:
+                            -   name: tokio
+                                path: tokio
+                                repository: tokio-rs/tokio
+                    -   name: regressions-amethyst
+                        projects:
+                            -   name: amethyst
+                                path: amethyst
+                                repository: amethyst/amethyst
+                    -   name: regressions-clap
+                        projects:
+                            -   name: clap
+                                path: clap
+                                repository: clap-rs/clap
+                    -   name: regressions-juniper
+                        projects:
+                            -   name: juniper
+                                path: juniper
+                                repository: graphql-rust/juniper
         env:
             ORG_GRADLE_PROJECT_showStandardStreams: true
             PROJECTS: ${{ toJSON(matrix.batch.projects) }}
@@ -81,6 +103,9 @@ jobs:
 
             - name: Checkout projects
               run: python scripts/fetch_projects.py --projects $'${{ toJSON(matrix.batch.projects) }}'
+
+            - name: Set up env variable for new resolve
+              run: echo "INTELLIJ_RUST_FORCE_USE_NEW_RESOLVE=" >> $GITHUB_ENV
 
             - name: Download
               uses: eskatos/gradle-command-action@v1
