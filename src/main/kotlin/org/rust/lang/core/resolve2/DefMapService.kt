@@ -18,7 +18,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiTreeChangeEvent
-import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ref.GCWatcher
 import org.jetbrains.annotations.TestOnly
 import org.rust.RsTask.TaskType.*
@@ -137,7 +136,8 @@ class DefMapService(val project: Project) : Disposable {
      * [DefMapHolder] can't be garbage collected while [CrateDefMap] is build,
      * see [DefMapUpdater.runWithStrongReferencesToDefMapHolders].
      */
-    private val defMaps: ConcurrentMap<CratePersistentId, DefMapHolder> = ContainerUtil.createConcurrentSoftValueMap()
+    // private val defMaps: ConcurrentMap<CratePersistentId, DefMapHolder> = ContainerUtil.createConcurrentSoftValueMap()
+    private val defMaps: ConcurrentMap<CratePersistentId, DefMapHolder> = ConcurrentHashMap()
     val defMapsBuildLock: ReentrantLock = ReentrantLock()
 
     private val fileIdToCrateId: ConcurrentHashMap<FileId, CratePersistentId> = ConcurrentHashMap()
@@ -233,7 +233,7 @@ class DefMapService(val project: Project) : Disposable {
         return fileIdToCrateId[virtualFile.id]
     }
 
-    private fun scheduleRebuildAllDefMaps() {
+    fun scheduleRebuildAllDefMaps() {
         checkWriteAccessAllowed()
         for (defMapHolder in defMaps.values) {
             defMapHolder.shouldRebuild = true

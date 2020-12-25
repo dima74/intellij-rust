@@ -225,12 +225,11 @@ class RsUseResolveTest : RsResolveTestBase() {
         }
     """)
 
-    @IgnoreInNewResolve
     fun `test wildcard`() = checkByCode("""
         mod a {
-            fn foo() {}
+            pub fn foo() {}
               //X
-            fn bar() {}
+            pub fn bar() {}
         }
 
         mod b {
@@ -502,7 +501,7 @@ class RsUseResolveTest : RsResolveTestBase() {
         }
     """)
 
-    @IgnoreInNewResolve
+    @IgnoreInNewResolve  // todo remove test ?
     fun `test star imports do not leak`() = checkByCode("""
         fn foo() {}
         mod m {
@@ -776,7 +775,7 @@ class RsUseResolveTest : RsResolveTestBase() {
         }          //^
     """)
 
-    @IgnoreInNewResolve
+    @IgnoreInNewResolve  // todo imports corner case (ignore for now)
     @MockEdition(Edition.EDITION_2018)
     fun `test usual import overrides glob import`() = checkByCode("""
         mod foo1 {

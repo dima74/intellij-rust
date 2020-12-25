@@ -29,6 +29,7 @@ fun buildDefMap(crate: Crate, allDependenciesDefMaps: Map<Crate, CrateDefMap>): 
     val defMap = buildDefMapContainingExplicitItems(context, allDependenciesDefMaps) ?: return null
     DefCollector(project, defMap, context).collect()
     defMap.afterBuilt()
+    // afterDefMapBuiltDebug(defMap, context)
     testAssert({ !isCrateChanged(crate, defMap) }, { "DefMap $defMap should be up-to-date just after built" })
     return defMap
 }

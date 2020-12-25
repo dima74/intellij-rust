@@ -29,8 +29,9 @@ import org.rust.lang.core.resolve2.RsModInfoBase.*
 import org.rust.openapiext.testAssert
 import org.rust.openapiext.toPsiFile
 
+@Suppress("SimplifyBooleanWithConstants")
 val Project.isNewResolveEnabled: Boolean
-    get() = rustSettings.newResolveEnabled
+    get() = rustSettings.newResolveEnabled || true
 
 /** null return value means that new resolve can't be used */
 fun processItemDeclarations2(

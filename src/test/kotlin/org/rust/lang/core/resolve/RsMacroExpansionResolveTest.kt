@@ -5,6 +5,7 @@
 
 package org.rust.lang.core.resolve
 
+import org.junit.Ignore
 import org.rust.*
 import org.rust.cargo.project.workspace.CargoWorkspace
 import org.rust.stdext.BothEditions
@@ -944,6 +945,28 @@ class RsMacroExpansionResolveTest : RsResolveTestBase() {
         foo!(1);
 
         fn main() {
+            func();
+        } //^
+    """)
+
+    @Ignore  // delete test ?
+    fun `test macro call expanded to macro def and macro call 3`() = checkByCode("""
+        fn main() {
+            macro_rules! foo {
+                (1) => {
+                    macro_rules! foo {
+                        (2) => { use inner::func; };
+                    }
+                    foo!(2);
+                };
+                (2) => {};
+            }
+
+            mod inner {
+                pub fn func() {}
+            }        //X
+            foo!(1);
+
             func();
         } //^
     """)

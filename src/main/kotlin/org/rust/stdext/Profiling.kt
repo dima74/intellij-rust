@@ -47,6 +47,11 @@ class Timings(
         return result!!
     }
 
+    fun addMeasure(name: String, time /* milliseconds */: Long) {
+        valuesTotal.merge(name, time, Long::plus)
+        invokes.merge(name, 1, Long::plus)
+    }
+
     fun values(): Map<String, Long> {
         val result = LinkedHashMap<String, Long>()
         for ((k, sum) in valuesTotal) {
@@ -97,14 +102,7 @@ class ListTimings {
     private fun calculate(values: MutableList<Long>): Statistics {
         val min = values.min() ?: error("Empty timings!")
         val max = values.max() ?: error("Empty timings!")
-        val avg = values.sum() / values.size.toDouble()
-        val variance = if (values.size > 1) {
-            values.fold(0.0) { acc, i -> acc + (i - avg).pow(2.0) } / (values.size - 1)
-        } else {
-            Double.NaN
-        }
-        val standardDeviation = sqrt(variance)
-
+        val (avg, standardDeviation) = values.getAverageAndStandardDeviation()
         return Statistics(min, max, avg, standardDeviation)
     }
 }
@@ -234,4 +232,15 @@ private object WATCHES {
     operator fun plusAssign(watch: RsWatch) {
         registered += watch
     }
+}
+
+fun List<Long>.getAverageAndStandardDeviation(): Pair<Double, Double> {
+    val avg = sum() / size.toDouble()
+    val variance = if (size > 1) {
+        fold(0.0) { acc, i -> acc + (i - avg).pow(2.0) } / (size - 1)
+    } else {
+        Double.NaN
+    }
+    val standardDeviation = sqrt(variance)
+    return Pair(avg, standardDeviation)
 }

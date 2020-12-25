@@ -14,6 +14,8 @@ import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
 
+private const val PRINT_TIME_STATISTICS: Boolean = false
+
 /** Builds [CrateDefMap] for [crates] in parallel using [pool] and with respect to dependency graph */
 class DefMapsBuilder(
     private val defMapService: DefMapService,
@@ -55,7 +57,9 @@ class DefMapsBuilder(
             }
         }
 
-        printTimeStatistics(wallTime)
+        printStatistics(builtDefMaps)
+        timesBuildDefMaps += wallTime
+        if (PRINT_TIME_STATISTICS) printTimeStatistics(wallTime)
     }
 
     private fun buildAsync() {
@@ -127,7 +131,6 @@ class DefMapsBuilder(
     }
 
     private fun printTimeStatistics(wallTime: Long) {
-        if (!RESOLVE_LOG.isDebugEnabled) return
         check(tasksTimes.size == crates.size)
         val totalTime = tasksTimes.values.sum()
         val top5crates = tasksTimes.entries
@@ -136,11 +139,14 @@ class DefMapsBuilder(
             .joinToString { (crate, time) -> "$crate ${time}ms" }
         val multithread = pool !is SameThreadExecutor
         if (multithread) {
-            RESOLVE_LOG.debug("wallTime: $wallTime, totalTime: $totalTime, " +
+            println("wallTime: $wallTime, totalTime: $totalTime, " +
                 "parallelism coefficient: ${"%.2f".format((totalTime.toDouble() / wallTime))}.    " +
                 "Top 5 crates: $top5crates")
         } else {
-            RESOLVE_LOG.debug("wallTime: $wallTime.    Top 5 crates: $top5crates")
+            println("wallTime: $wallTime.    Top 5 crates: $top5crates")
         }
     }
 }
+
+// todo remove
+val timesBuildDefMaps: MutableList<Long> = mutableListOf()
