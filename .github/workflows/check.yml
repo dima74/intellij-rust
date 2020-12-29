@@ -6,6 +6,7 @@ on:
             - master
             - staging
             - trying
+            - ref-suggested-rename
     pull_request:
 
 jobs:
