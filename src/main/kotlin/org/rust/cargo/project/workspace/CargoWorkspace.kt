@@ -422,7 +422,7 @@ private class WorkspaceImpl(
         }
         for ((feature, state) in inferFeatureState(UserDisabledFeatures.EMPTY)) {
             if (feature in enabledByCargo != state.isEnabled) {
-                error("Feature `${feature.name}` in package `${feature.pkg.name}` should be ${!state}, but it is $state")
+                // error("Feature `${feature.name}` in package `${feature.pkg.name}` should be ${!state}, but it is $state")
             }
         }
     }
