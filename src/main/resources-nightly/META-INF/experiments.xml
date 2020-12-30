@@ -9,7 +9,7 @@
         <experimentalFeature id="org.rust.cargo.fetch.actual.stdlib.metadata" percentOfUsers="100">
             <description>Fetch metadata of actual stdlib crates instead of using hardcoded data</description>
         </experimentalFeature>
-        <experimentalFeature id="org.rust.macros.proc" percentOfUsers="0">
+        <experimentalFeature id="org.rust.macros.proc" percentOfUsers="100">
             <description>Enables all types of procedural macro expansion</description>
         </experimentalFeature>
         <experimentalFeature id="org.rust.macros.proc.function-like" percentOfUsers="100">
