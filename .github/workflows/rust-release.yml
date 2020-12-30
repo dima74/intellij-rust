@@ -10,8 +10,6 @@ on:
             update_changelog:
                 required: false
                 description: 'Enables/disables Rust changelog update'
-    schedule:
-        - cron: '0 3 * * *'
 
 jobs:
     generate-build-number:
