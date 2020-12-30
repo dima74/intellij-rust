@@ -16,7 +16,7 @@ jobs:
             # So, we need to find the latest common commit for master branch and chosen one
             # to calculate difference only for branch changes
             - name: Calculate base commit for workflow_dispatch event
-              if: github.event_name == 'workflow_dispatch'
+              if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
               run: echo "BASE_COMMIT=$(git merge-base origin/master ${{ github.sha }})" >> $GITHUB_ENV
 
             # For pull request event, GitHub produces additional merge commit with `master` branch and PR branch as parents
@@ -45,15 +45,72 @@ jobs:
             fail-fast: false
             matrix:
                 batch:
-                    - name: regressions-1
+                    - name: regressions-cargo
                       projects:
                           - name: cargo
+                            path: cargo
                             repository: rust-lang/cargo
+                    - name: regressions-mysql_async
+                      projects:
+                          - name: mysql_async
+                            path: mysql_async
+                            repository: blackbeam/mysql_async
+                    - name: regressions-tokio
+                      projects:
                           - name: tokio
+                            path: tokio
                             repository: tokio-rs/tokio
+                    - name: regressions-amethyst
+                      projects:
                           - name: amethyst
+                            path: amethyst
                             repository: amethyst/amethyst
-                    - name: regressions-2
+                            include:
+                                - .sentry_dsn.txt
+                    - name: regressions-clap
+                      projects:
+                          - name: clap
+                            path: clap
+                            repository: clap-rs/clap
+                    - name: regressions-diesel
+                      projects:
+                          - name: diesel
+                            path: diesel
+                            repository: diesel-rs/diesel
+                            exclude:
+                                - rust-toolchain
+                    - name: regressions-rust-analyzer
+                      projects:
+                          - name: rust-analyzer
+                            path: rust-analyzer
+                            repository: rust-analyzer/rust-analyzer
+                    - name: regressions-xi-editor
+                      projects:
+                          - name: xi-editor
+                            path: xi-editor/rust
+                            repository: xi-editor/xi-editor
+                    - name: regressions-juniper
+                      projects:
+                          - name: juniper
+                            path: juniper
+                            repository: graphql-rust/juniper
+                    - name: regressions-rustc
+                      projects:
+                          - name: rust
+                            path: rust
+                            repository: rust-lang/rust
+                            exclude:
+                                - src/llvm
+                                - src/llvm-emscripten
+                                - src/binaryen
+                                - src/test
+                                - src/ci
+                                - src/rt
+                                - src/compiler-rt
+                                - src/jemalloc
+                                - build
+                                - tmp
+                    - name: regressions-stdlib
                       projects:
                           - name: stdlib
         env:
@@ -78,7 +135,7 @@ jobs:
               uses: actions-rs/toolchain@v1
               with:
                   profile: minimal
-                  toolchain: stable
+                  toolchain: nightly-2021-01-25
                   components: rust-src
                   default: true
 
