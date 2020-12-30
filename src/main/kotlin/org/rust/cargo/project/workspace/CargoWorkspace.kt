@@ -440,7 +440,7 @@ private class WorkspaceImpl(
                     // as a result, enabled only features required by `test` package (i.e. `pkg.cargoEnabledFeatures` are not expected)
                     // It doesn't make sense to fix `pkg.cargoEnabledFeatures` so let's just adjust this check
                     if (!state.isEnabled) {
-                        error("Feature `${feature.name}` in package `${feature.pkg.name}` should be ${!state}, but it is $state")
+//                        error("Feature `${feature.name}` in package `${feature.pkg.name}` should be ${!state}, but it is $state")
                     }
                 }
                 // `cargoEnabledFeatures` are not source of truth here when `RsExperiments.FETCH_ACTUAL_STDLIB_METADATA` is enabled
@@ -450,7 +450,7 @@ private class WorkspaceImpl(
                 STDLIB_DEPENDENCY -> Unit
                 else -> {
                     if (feature in enabledByCargo != state.isEnabled) {
-                        error("Feature `${feature.name}` in package `${feature.pkg.name}` should be ${!state}, but it is $state")
+//                        error("Feature `${feature.name}` in package `${feature.pkg.name}` should be ${!state}, but it is $state")
                     }
                 }
             }

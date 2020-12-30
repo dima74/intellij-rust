@@ -14,7 +14,7 @@ import org.rust.openapiext.fullyRefreshDirectory
 
 abstract class RsRealProjectTestBase : RsWithToolchainTestBase() {
     protected fun openRealProject(info: RealProjectInfo): VirtualFile? {
-        val base = openRealProject("testData/${info.path}", info.exclude)
+        val base = openRealProject("testData/${info.path}", info.exclude, info.include)
         if (base == null) {
             val name = info.name
             println("SKIP $name: git clone ${info.repository} testData/$name")
@@ -23,12 +23,14 @@ abstract class RsRealProjectTestBase : RsWithToolchainTestBase() {
         return base
     }
 
-    private fun openRealProject(path: String, exclude: List<String> = emptyList()): VirtualFile? {
+    private fun openRealProject(path: String, exclude: List<String>, include: List<String>): VirtualFile? {
         val projectDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(path)
             ?: return null
 
         fun isAppropriate(file: VirtualFile): Boolean {
             val relativePath = file.path.substring(projectDir.path.length + 1)
+            // 0. Analyze included files
+            if (include.any { relativePath.startsWith(it) }) return true
             // 1. Ignore excluded files
             if (exclude.any { relativePath.startsWith(it) }) return false
             // 2. Ignore hidden files
@@ -57,7 +59,8 @@ abstract class RsRealProjectTestBase : RsWithToolchainTestBase() {
         val name: String,
         val path: String = name,
         val repository: String = "",
-        val exclude: List<String> = emptyList()
+        val exclude: List<String> = emptyList(),
+        val include: List<String> = emptyList(),
     )
 
     companion object {
@@ -81,13 +84,24 @@ abstract class RsRealProjectTestBase : RsWithToolchainTestBase() {
         val CARGO = RealProjectInfo("cargo", "cargo", "https://github.com/rust-lang/cargo")
         val MYSQL_ASYNC = RealProjectInfo("mysql_async", "mysql_async", "https://github.com/blackbeam/mysql_async")
         val TOKIO = RealProjectInfo("tokio", "tokio", "https://github.com/tokio-rs/tokio")
-        val AMETHYST = RealProjectInfo("amethyst", "amethyst", "https://github.com/amethyst/amethyst")
+        val AMETHYST = RealProjectInfo(
+            "amethyst",
+            "amethyst",
+            "https://github.com/amethyst/amethyst",
+            include = listOf(".sentry_dsn.txt")
+        )
         val CLAP = RealProjectInfo("clap", "clap", "https://github.com/clap-rs/clap")
-        val DIESEL = RealProjectInfo("diesel", "diesel", "https://github.com/diesel-rs/diesel")
+        val DIESEL = RealProjectInfo(
+            "diesel",
+            "diesel",
+            "https://github.com/diesel-rs/diesel",
+            exclude = listOf("rust-toolchain")
+        )
         val RUST_ANALYZER = RealProjectInfo("rust-analyzer", "rust-analyzer", "https://github.com/rust-analyzer/rust-analyzer")
         val XI_EDITOR = RealProjectInfo("xi-editor", "xi-editor/rust", "https://github.com/xi-editor/xi-editor")
         val JUNIPER = RealProjectInfo("juniper", "juniper", "https://github.com/graphql-rust/juniper")
         val STDARCH = RealProjectInfo("stdarch", "stdarch", "https://github.com/rust-lang/stdarch")
+        val EMPTY = RealProjectInfo("empty", "empty", "todo")
 
         private val EXCLUDED_DIRECTORY_NAMES = setOf("target")
     }

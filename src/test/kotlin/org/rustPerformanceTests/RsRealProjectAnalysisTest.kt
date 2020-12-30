@@ -14,9 +14,16 @@ import org.rust.ide.annotator.RsErrorAnnotator
 import org.rust.ide.inspections.RsLocalInspectionTool
 import org.rust.ide.inspections.RsUnresolvedReferenceInspection
 import org.rust.lang.RsFileType
+import org.rust.lang.core.crate.crateGraph
 import org.rust.lang.core.macros.MacroExpansionScope
 import org.rust.lang.core.macros.macroExpansionManager
 import org.rust.lang.core.psi.RsFile
+import org.rust.lang.core.psi.ext.RsMod
+import org.rust.lang.core.psi.ext.childModules
+import org.rust.lang.core.psi.shouldIndexFile
+import org.rust.lang.core.resolve2.defMapService
+import org.rust.lang.core.resolve2.getOrUpdateIfNeeded
+import org.rust.lang.core.resolve2.isNewResolveEnabled
 import org.rust.openapiext.toPsiFile
 
 open class RsRealProjectAnalysisTest : RsRealProjectTestBase() {
@@ -62,21 +69,42 @@ open class RsRealProjectAnalysisTest : RsRealProjectTestBase() {
 
         println("Collecting files to analyze")
 
-        val baseDirToCheck = if (info.name == STDLIB) rustupFixture.stdlib!! else base
+        val stdlibBaseDir = rustupFixture.stdlib!!
 
-        val filesToCheck = baseDirToCheck.findDescendants {
-            it.fileType == RsFileType && run {
-                val file = it.toPsiFile(project)
-                file is RsFile && file.crateRoot != null && file.cargoWorkspace != null
+        val isStdlib = info.name == STDLIB
+        val filesToCheck = if (isStdlib) {
+            stdlibBaseDir.findDescendants {
+                it.fileType == RsFileType && run {
+                    val file = it.toPsiFile(project)
+                    file is RsFile && file.crateRoot != null && file.cargoWorkspace != null
+                }
             }
+        } else {
+            val crates = project.crateGraph.topSortedCrates.reversed()
+            if (project.isNewResolveEnabled) {
+                for (crate in crates) {
+                    project.defMapService.getOrUpdateIfNeeded(crate.id ?: continue)
+                }
+            }
+            crates
+                .filter {
+                    val crateRoot = it.rootModFile ?: return@filter false
+                    shouldIndexFile(project, crateRoot)
+                }
+                .mapNotNull { it.rootMod }
+                .flatMap { getAllFiles(it) }
+                .map { it.virtualFile }
         }
-        for (file in filesToCheck) {
+
+        for ((index, file) in filesToCheck.withIndex()) {
+            if (!isStdlib && VfsUtil.isAncestor(stdlibBaseDir, file, true)) continue
+
             val path = if (VfsUtil.isAncestor(base, file, true)) {
                 file.path.substring(base.path.length + 1)
             } else {
                 file.path
             }
-            println("Analyzing $path")
+            println("Analyzing $index/${filesToCheck.size} $path")
             myFixture.openFileInEditor(file)
             val infos = myFixture.doHighlighting(HighlightSeverity.ERROR)
             val text = myFixture.editor.document.text
@@ -153,4 +181,14 @@ open class RsRealProjectAnalysisTest : RsRealProjectTestBase() {
             return "$filePath:$line:$column '$highlightedText' ($error)$suffix"
         }
     }
+}
+
+private fun getAllFiles(crateRoot: RsFile): List<RsFile> {
+    val result = mutableListOf<RsFile>()
+    fun go(mod: RsMod) {
+        if (mod is RsFile) result += mod
+        mod.childModules.forEach(::go)
+    }
+    go(crateRoot)
+    return result
 }

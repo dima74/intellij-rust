@@ -21,4 +21,4 @@ if __name__ == '__main__':
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         else:
             repository = project["repository"]
-            git_command("clone", "--depth", "1", f"https://github.com/{repository}.git", path)
+            git_command("clone", "--depth", "1", "--recurse-submodules", f"https://github.com/{repository}.git", path)
