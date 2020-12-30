@@ -304,7 +304,7 @@ class Cargo(
 
         val processResult = commandLine.execute(owner, listener = listener)
         if (processResult is Err) {
-            LOG.warn("Build script evaluation failed", processResult.err)
+            LOG.error("Build script evaluation failed", processResult.err)
         }
         val processOutput = processResult
             .ignoreExitCode()
