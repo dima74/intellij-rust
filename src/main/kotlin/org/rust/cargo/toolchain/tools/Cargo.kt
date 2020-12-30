@@ -218,7 +218,7 @@ class Cargo(toolchain: RsToolchainBase, useWrapper: Boolean = false)
         val processOutput = try {
             commandLine.execute(owner, ignoreExitCode = true, listener = listener)
         } catch (e: ExecutionException) {
-            LOG.warn(e)
+            LOG.error(e)
             return BuildMessages.FAILED
         }
 
