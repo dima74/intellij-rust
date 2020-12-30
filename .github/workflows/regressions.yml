@@ -1,6 +1,6 @@
 name: regressions
 
-on: [ workflow_dispatch, pull_request ]
+on: [ workflow_dispatch, pull_request, push ]
 
 jobs:
     calculate-base-commit:
@@ -161,6 +161,7 @@ jobs:
               uses: eskatos/gradle-command-action@v1
               env:
                   RESULT_SUFFIX: _without_changes
+                  INTELLIJ_RUST_FORCE_USE_OLD_RESOLVE: 1
               with:
                   arguments: "clean :test --tests \"org.rustPerformanceTests.CustomRealProjectAnalysisTest\""
 
