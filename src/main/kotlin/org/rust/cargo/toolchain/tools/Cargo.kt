@@ -301,7 +301,7 @@ class Cargo(
         val processOutput = commandLine.execute(owner, listener = listener)
             .ignoreExitCode()
             .unwrapOrElse {
-                LOG.warn(it)
+                LOG.error(it)
                 return BuildMessages.FAILED
             }
 
