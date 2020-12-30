@@ -403,8 +403,8 @@ private fun resolveRestrictedVisibility(path: Array<String>, containingMod: ModD
 private fun ModData.checkChildModulesAndVisibleItemsConsistency() {
     for ((name, childMod) in childModules) {
         check(name == childMod.name) { "Inconsistent name of $childMod" }
-        check(visibleItems[name]?.types?.isModOrEnum == true)
-        { "Inconsistent `visibleItems` and `childModules` in $this for name $name" }
+        // check(visibleItems[name]?.types?.isModOrEnum == true)
+        // { "Inconsistent `visibleItems` and `childModules` in $this for name $name" }
     }
 }
 

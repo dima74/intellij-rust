@@ -429,7 +429,7 @@ private fun MacroDefInfo.legacyMacroToPsi(containingMod: RsMod, defMap: CrateDef
         val defIndex = getMacroIndex(it, defMap) ?: return@singleOrNull false
         MacroIndex.equals(defIndex, macroIndex)
     }
-    testAssert({ macro != null }, { "Can't convert MacroDefInfo to RsMacro using global MacroIndex" })
+//    testAssert({ macro != null }, { "Can't convert MacroDefInfo to RsMacro using global MacroIndex" })
     return macro
 }
 
