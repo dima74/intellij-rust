@@ -185,7 +185,7 @@ open class Cargo(toolchain: RsToolchain, useWrapper: Boolean = false)
         val processOutput = try {
             commandLine.execute(owner, listener = listener)
         } catch (e: ExecutionException) {
-            LOG.warn(e)
+            LOG.error(e)
             return null
         }
 

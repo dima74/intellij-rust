@@ -346,7 +346,7 @@ class ImplLookup(
         }
         // Place inherent impls to the head of the list
         implsAndTraits.sortBy { !it.isInherent }
-        testAssert { implsAndTraits.distinct().size == implsAndTraits.size }
+        // testAssert { implsAndTraits.distinct().size == implsAndTraits.size }
         return implsAndTraits
     }
 
