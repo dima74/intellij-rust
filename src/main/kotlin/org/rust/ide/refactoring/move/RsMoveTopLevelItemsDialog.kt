@@ -126,14 +126,7 @@ class RsMoveTopLevelItemsDialog(
     public override fun doAction() {
         val itemsToMove = getSelectedItems()
         val targetFilePath = targetFileChooser.text
-
-        val targetMod = findTargetMod(targetFilePath)
-        if (targetMod == null) {
-            val message = "Target file must be a Rust file"
-            CommonRefactoringUtil.showErrorMessage(message("error.title"), message, null, project)
-            return
-        }
-
+        val targetMod = getTargetMod(targetFilePath) ?: return
         try {
             val processor = RsMoveTopLevelItemsProcessor(project, itemsToMove, targetMod, searchForReferences)
             invokeRefactoring(processor)
@@ -143,10 +136,21 @@ class RsMoveTopLevelItemsDialog(
         }
     }
 
-    private fun findTargetMod(targetFilePath: String): RsMod? {
+    private fun getTargetMod(targetFilePath: String): RsMod? {
         if (isUnitTestMode) return sourceMod.containingFile.getUserData(MOVE_TARGET_MOD_KEY)
         val targetFile = LocalFileSystem.getInstance().findFileByIoFile(File(targetFilePath))
-        return targetFile?.toPsiFile(project) as? RsMod
+        if (targetFile == null) {
+            todo write action? посмотреть когда именно в других языках создаётся файл
+            // todo create file
+            return null
+        }
+
+        val targetMod = targetFile.toPsiFile(project) as? RsMod
+        if (targetMod == null) {
+            val message = "Target file must be a Rust file"
+            CommonRefactoringUtil.showErrorMessage(message("error.title"), message, null, project)
+        }
+        return targetMod
     }
 }
 

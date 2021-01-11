@@ -317,7 +317,7 @@ class MacroExpander(val project: Project) {
 
     /** Ensures that the buffer ends (or [str] starts) with a whitespace and appends [str] to the buffer */
     private fun StringBuilder.safeAppend(str: CharSequence) {
-        if (!isEmpty() && !last().isWhitespace() && !str.isEmpty() && !str.first().isWhitespace()) {
+        if (length > 0 && !last().isWhitespace() && !str.isEmpty() && !str.first().isWhitespace()) {
             append(" ")
         }
         append(str)
