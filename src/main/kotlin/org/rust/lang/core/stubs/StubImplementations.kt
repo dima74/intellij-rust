@@ -43,7 +43,10 @@ import org.rust.stdext.writeHashCodeNullable
 class RsFileStub(
     file: RsFile?,
     val mayHaveStdlibAttributes: Boolean,
+    // #[macro_use]
     val mayHaveMacroUse: Boolean,
+    // #[cfg()]
+    val mayHaveCfg: Boolean,
 ) : PsiFileStubImpl<RsFile>(file) {
 
     override fun getType() = Type
@@ -60,7 +63,12 @@ class RsFileStub(
 
                 // for tests related to rust console
                 if (file is RsReplCodeFragment) {
-                    return RsFileStub(null, mayHaveStdlibAttributes = false, mayHaveMacroUse = false)
+                    return RsFileStub(
+                        null,
+                        mayHaveStdlibAttributes = false,
+                        mayHaveMacroUse = false,
+                        mayHaveCfg = false
+                    )
                 }
 
                 check(file is RsFile)
@@ -68,7 +76,8 @@ class RsFileStub(
                 return RsFileStub(
                     file,
                     rawAttributes.hasAnyOfAttributes("no_std", "no_core"),
-                    rawAttributes.hasAtomAttribute("macro_use")
+                    rawAttributes.hasAtomAttribute("macro_use"),
+                    rawAttributes.hasAtomAttribute("cfg")
                 )
             }
 
@@ -89,7 +98,12 @@ class RsFileStub(
         }
 
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): RsFileStub {
-            return RsFileStub(null, dataStream.readBoolean(), dataStream.readBoolean())
+            return RsFileStub(
+                null,
+                dataStream.readBoolean(),
+                dataStream.readBoolean(),
+                dataStream.readBoolean()
+            )
         }
 
         override fun getExternalId(): String = "Rust.file"
