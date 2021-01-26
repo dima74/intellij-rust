@@ -167,6 +167,7 @@ private class ModCollector(
             else -> return null
         }
         val isDeeplyEnabledByCfg = item.isDeeplyEnabledByCfg
+            && (childMod !is ChildMod.File || childMod.file.isEnabledByCfgSelf(crate))
         val (childModData, childModLegacyMacros) =
             collectChildModule(childMod, isDeeplyEnabledByCfg, item.pathAttribute, index)
         if (childMod.hasMacroUse && isDeeplyEnabledByCfg) {

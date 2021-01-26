@@ -318,9 +318,6 @@ fun RsAttributeOwnerStub.isEnabledByCfgSelf(crate: Crate): Boolean {
 private fun RsDocAndAttributeOwner.evaluateCfg(crateOrNull: Crate? = null): ThreeValuedLogic {
     if (!CFG_ATTRIBUTES_ENABLED_KEY.asBoolean()) return ThreeValuedLogic.True
 
-    // TODO: add cfg to RsFile's stub and remove this line
-    if (this is RsFile) return ThreeValuedLogic.True
-
     if (attributeStub?.mayHaveCfg == false) return ThreeValuedLogic.True
 
     val crate = crateOrNull ?: containingCrate ?: return ThreeValuedLogic.True // TODO: maybe unknown?
