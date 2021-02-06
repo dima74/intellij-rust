@@ -3,7 +3,7 @@
  * found in the LICENSE file.
  */
 
-package org.rust.lang.core.macros
+package org.rust.lang.core.macros.decl
 
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.parser.GeneratedParserUtilBase
@@ -89,7 +89,7 @@ enum class FragmentKind(private val kind: String) {
          * Some tokens that treated as keywords by our lexer,
          * but rustc's macro parser treats them as identifiers
          */
-        private val IDENTIFIER_TOKENS = TokenSet.orSet(
+        val IDENTIFIER_TOKENS = TokenSet.orSet(
             tokenSetOf(RsElementTypes.IDENTIFIER, RsElementTypes.BOOL_LITERAL),
             RS_KEYWORDS
         )

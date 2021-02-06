@@ -105,6 +105,7 @@ val MappedTextRange.srcEndOffset: Int get() = srcOffset + length
 val MappedTextRange.dstEndOffset: Int get() = dstOffset + length
 
 val MappedTextRange.srcRange: TextRange get() = TextRange(srcOffset, srcOffset + length)
+val MappedTextRange.dstRange: TextRange get() = TextRange(dstOffset, dstOffset + length)
 
 fun MappedTextRange.srcShiftLeft(delta: Int) = copy(srcOffset = srcOffset - delta)
 
@@ -120,5 +121,22 @@ private fun MappedTextRange.dstIntersection(range: TextRange): MappedTextRange? 
         )
     } else {
         null
+    }
+}
+
+fun MutableList<MappedTextRange>.mergeAdd(range: MappedTextRange) {
+    val last = lastOrNull() ?: run {
+        add(range)
+        return
+    }
+
+    if (last.srcEndOffset == range.srcOffset && last.dstEndOffset == range.dstOffset) {
+        set(size - 1, MappedTextRange(
+            last.srcOffset,
+            last.dstOffset,
+            last.length + range.length
+        ))
+    } else {
+        add(range)
     }
 }
