@@ -15,6 +15,7 @@ import org.rust.ide.utils.import.ImportCandidate
 import org.rust.lang.core.macros.proc.ProcMacroApplicationService
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.ext.*
+import org.rust.lang.doc.psi.RsDocLinkDestination
 import org.rust.lang.utils.RsDiagnostic
 import org.rust.lang.utils.addToHolder
 import javax.swing.JComponent
@@ -35,6 +36,8 @@ class RsUnresolvedReferenceInspection : RsLocalInspectionTool() {
                 if (rootPathParent is RsMetaItem) {
                     if (!rootPathParent.isMacroCall || !ProcMacroApplicationService.isEnabled()) return
                 }
+
+                if (path.ancestorStrict<RsDocLinkDestination>() != null) return
 
                 val isPathUnresolved = path.resolveStatus != PathResolveStatus.RESOLVED
                 val qualifier = path.qualifier

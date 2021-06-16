@@ -17,6 +17,7 @@ import org.rust.lang.core.resolve.ref.*
 import org.rust.lang.core.stubs.RsPathStub
 import org.rust.lang.core.stubs.common.RsPathPsiOrStub
 import org.rust.lang.core.types.ty.TyPrimitive
+import org.rust.lang.doc.psi.RsDocLinkDestination
 
 private val RS_PATH_KINDS = tokenSetOf(IDENTIFIER, SELF, SUPER, CSELF, CRATE)
 
@@ -63,6 +64,9 @@ val RsPath.qualifier: RsPath?
         }
         return (ctx as? RsUseSpeck)?.qualifier
     }
+
+val RsPath.isInsideDocLink: Boolean
+    get() = rootPath().parent is RsDocLinkDestination
 
 fun RsPath.allowedNamespaces(isCompletion: Boolean = false, parent: PsiElement? = this.parent): Set<Namespace> = when (parent) {
     is RsPath, is RsTraitRef, is RsStructLiteral, is RsPatStruct -> TYPES
@@ -160,7 +164,7 @@ abstract class RsPathImplMixin : RsStubbedElementImpl<RsPathStub>,
             //          //^ containingMod == `foo`
             // ```
             val visParent = (rootPath().parent as? RsVisRestriction)?.parent?.parent
-            return if (visParent is RsMod) visParent.containingMod else super.containingMod
+            return if (visParent is RsMod) visParent.containingMod else super<RsStubbedElementImpl>.containingMod
         }
 
     override val hasColonColon: Boolean get() = greenStub?.hasColonColon ?: (coloncolon != null)

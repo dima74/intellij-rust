@@ -21,6 +21,7 @@ import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.RsElementTypes.*
 import org.rust.lang.core.psi.ext.*
 import org.rust.lang.core.types.ty.TyPrimitive
+import org.rust.lang.doc.psi.RsDocLinkDestination
 import org.rust.openapiext.getOrPut
 import org.rust.openapiext.isUnitTestMode
 
@@ -102,6 +103,7 @@ class RsHighlightingAnnotator : AnnotatorBase() {
     private fun highlightReference(element: RsReferenceElement, holder: AnnotationHolder): RsColor? {
         // These should be highlighted as keywords by the lexer
         if (element is RsPath && element.kind != PathKind.IDENTIFIER) return null
+        if (element is RsPath && element.rootPath().parent is RsDocLinkDestination) return null
         if (element is RsExternCrateItem && element.self != null) return null
 
         val parent = element.parent

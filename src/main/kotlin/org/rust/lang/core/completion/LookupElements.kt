@@ -33,6 +33,7 @@ import org.rust.lang.core.types.ty.*
 import org.rust.lang.core.types.type
 import org.rust.openapiext.Testmark
 import org.rust.stdext.mapToSet
+import org.rust.lang.doc.psi.RsDocLinkDestination
 
 const val DEFAULT_PRIORITY = 0.0
 
@@ -307,7 +308,7 @@ open class RsDefaultInsertHandler : InsertHandler<LookupElement> {
                         EditorModificationUtil.moveCaretRelatively(context.editor, 2)
                     }
                 }
-                else -> {
+                context.getElementOfType<RsDocLinkDestination>() == null -> {
                     val isMethodCall = context.getElementOfType<RsMethodOrField>() != null
                     if (!context.alreadyHasCallParens) {
                         document.insertString(context.selectionEndOffset, "()")

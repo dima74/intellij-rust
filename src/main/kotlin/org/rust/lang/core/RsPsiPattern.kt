@@ -19,6 +19,7 @@ import com.intellij.util.ProcessingContext
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.RsElementTypes.*
 import org.rust.lang.core.psi.ext.*
+import org.rust.lang.doc.psi.RsDocLinkDestination
 
 /**
  * Rust PSI tree patterns.
@@ -145,7 +146,8 @@ object RsPsiPattern {
                             path.path == null &&
                             path.typeQual == null &&
                             !path.hasColonColon &&
-                            path.ancestorStrict<RsUseSpeck>() == null
+                            path.ancestorStrict<RsUseSpeck>() == null &&
+                            path.ancestorStrict<RsDocLinkDestination>() == null
                 })
             return psiElement().withParent(simplePath)
         }

@@ -6,6 +6,7 @@
 package org.rust.lang.core.completion
 
 import com.intellij.codeInsight.completion.*
+import com.intellij.codeInsight.completion.CompletionInitializationContext.DUMMY_IDENTIFIER_TRIMMED
 import com.intellij.codeInsight.completion.impl.CompletionSorterImpl
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementWeigher
@@ -17,6 +18,8 @@ import org.rust.lang.core.completion.lint.RsRustcLintCompletionProvider
 import org.rust.lang.core.completion.sort.RS_COMPLETION_WEIGHERS
 import org.rust.lang.core.completion.sort.RsCompletionWeigher
 import org.rust.lang.core.or
+import org.rust.lang.core.psi.ext.ancestorStrict
+import org.rust.lang.doc.psi.RsDocLinkDestination
 import org.rust.stdext.exhaustive
 
 class RsCompletionContributor : CompletionContributor() {
@@ -54,6 +57,13 @@ class RsCompletionContributor : CompletionContributor() {
 
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, withRustSorter(parameters, result))
+    }
+
+    override fun beforeCompletion(context: CompletionInitializationContext) {
+        super.beforeCompletion(context)
+        if (context.file.findElementAt(context.startOffset)?.ancestorStrict<RsDocLinkDestination>() != null) {
+            context.dummyIdentifier = DUMMY_IDENTIFIER_TRIMMED
+        }
     }
 
     companion object {
