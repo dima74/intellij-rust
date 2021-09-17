@@ -514,7 +514,7 @@ data class VisItem(
 
     fun adjust(visibilityNew: Visibility, isFromNamedImport: Boolean): VisItem =
         copy(
-            visibility = if (visibility.isInvisible) visibility else visibilityNew,
+            visibility = visibilityNew.intersect(visibility),
             isFromNamedImport = isFromNamedImport
         )
 
@@ -573,6 +573,8 @@ sealed class Visibility {
             }
         }
     }
+
+    fun intersect(other: Visibility): Visibility = if (isStrictlyMorePermissive(other)) other else this
 
     val type: VisibilityType
         get() = when (this) {
