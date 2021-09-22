@@ -11,6 +11,12 @@ import org.rust.ide.search.RsWithMacrosProjectScope
 import org.rust.lang.core.parser.RustParserUtil
 import org.rust.lang.core.psi.*
 import org.rust.lang.core.psi.ext.*
+import org.rust.lang.core.resolve.Namespace
+import org.rust.lang.core.resolve.namespaces
+import org.rust.lang.core.resolve2.CrateDefMap
+import org.rust.lang.core.resolve2.ModData
+import org.rust.lang.core.resolve2.RsModInfoBase
+import org.rust.lang.core.resolve2.getModInfo
 
 @Suppress("DataClassPrivateConstructor")
 data class ImportContext private constructor(
@@ -45,6 +51,35 @@ data class ImportContext private constructor(
     }
 }
 
+class ImportContext2 private constructor(
+    val project: Project,
+    /** Mod in which auto-import or completion is called */
+    val rootMod: RsMod,
+    val rootModData: ModData,
+    /** DefMap of [rootModData] */
+    val rootDefMap: CrateDefMap,
+
+    val parentPathText: String?,
+    val pathParsingMode: RustParserUtil.PathParsingMode,
+    val namespaceFilter: (RsQualifiedNamedElement) -> Boolean,
+) {
+    companion object {
+        fun from(path: RsPath, isCompletion: Boolean): ImportContext2? {
+            val rootMod = path.containingMod
+            val info = getModInfo(rootMod) as? RsModInfoBase.RsModInfo ?: return null
+            return ImportContext2(
+                project = info.project,
+                rootMod = rootMod,
+                rootModData = info.modData,
+                rootDefMap = info.defMap,
+                parentPathText = (path.parent as? RsPath)?.text,
+                pathParsingMode = path.pathParsingMode,
+                namespaceFilter = path.namespaceFilter(isCompletion)
+            )
+        }
+    }
+}
+
 private fun RsPath.namespaceFilter(isCompletion: Boolean): (RsQualifiedNamedElement) -> Boolean = when (context) {
     is RsTypeReference -> { e ->
         when (e) {
@@ -61,12 +96,15 @@ private fun RsPath.namespaceFilter(isCompletion: Boolean): (RsQualifiedNamedElem
             // TODO: take into account fields type
             is RsFieldsOwner,
             is RsConstant,
-            is RsFunction -> true
+            is RsFunction,
+            is RsTypeAlias -> true
             else -> false
         }
     }
     is RsTraitRef -> { e -> e is RsTraitItem }
-    is RsStructLiteral -> { e -> e is RsFieldsOwner && e.blockFields != null }
+    is RsStructLiteral -> { e ->
+        e is RsFieldsOwner && e.blockFields != null || e is RsTypeAlias
+    }
     is RsPatBinding -> { e ->
         when (e) {
             is RsEnumItem,
@@ -78,6 +116,7 @@ private fun RsPath.namespaceFilter(isCompletion: Boolean): (RsQualifiedNamedElem
             else -> false
         }
     }
+    is RsPath -> { e -> Namespace.Types in e.namespaces }
     else -> { _ -> true }
 }
 

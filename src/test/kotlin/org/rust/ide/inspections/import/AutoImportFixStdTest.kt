@@ -13,9 +13,9 @@ import org.rust.ide.utils.import.Testmarks
 
 @ProjectDescriptor(WithStdlibAndDependencyRustProjectDescriptor::class)
 class AutoImportFixStdTest : AutoImportFixTestBase() {
-    fun `test import item from std crate`() = checkAutoImportFixByText("""
+    fun `test import item from std crate`() = checkAutoImportFixByTextWithMultipleChoice("""
         fn foo<T: <error descr="Unresolved reference: `io`">io/*caret*/</error>::Read>(t: T) {}
-    """, """
+    """, listOf("std::io", "std::os::unix::io"), "std::io", """
         use std::io;
 
         fn foo<T: io/*caret*/::Read>(t: T) {}
@@ -228,6 +228,7 @@ class AutoImportFixStdTest : AutoImportFixTestBase() {
         }
     """)
 
+    // existing `extern crate` is ignored for simplicity
     fun `test insert relative use item 1`() = checkAutoImportFixByFileTree("""
         //- dep-lib/lib.rs
         pub struct Foo;
@@ -247,19 +248,22 @@ class AutoImportFixStdTest : AutoImportFixTestBase() {
         pub struct Foo;
 
         //- main.rs
+        extern crate dep_lib_target;
+
         mod bar;
         fn main() {}
 
         //- bar.rs
         extern crate dep_lib_target;
 
-        use self::dep_lib_target::Foo;
+        use dep_lib_target::Foo;
 
         fn bar() {
             let x = Foo/*caret*/;
         }
-    """, Testmarks.externCrateItemInNotCrateRoot)
+    """)
 
+    // existing `extern crate` is ignored for simplicity
     fun `test insert relative use item 2`() = checkAutoImportFixByFileTree("""
         //- dep-lib/lib.rs
         pub struct Foo;
@@ -282,6 +286,8 @@ class AutoImportFixStdTest : AutoImportFixTestBase() {
         pub struct Foo;
 
         //- main.rs
+        extern crate dep_lib_target;
+
         mod bar;
         fn main() {}
 
@@ -291,12 +297,12 @@ class AutoImportFixStdTest : AutoImportFixTestBase() {
         mod baz;
 
         //- bar/baz.rs
-        use super::dep_lib_target::Foo;
+        use dep_lib_target::Foo;
 
         fn baz() {
             let x = Foo/*caret*/;
         }
-    """, Testmarks.externCrateItemInNotCrateRoot)
+    """)
 
     fun `test do not try to highlight primitive types`() = checkAutoImportFixIsUnavailable("""
         pub trait Zero<N> {
@@ -742,4 +748,43 @@ class AutoImportFixStdTest : AutoImportFixTestBase() {
 
         fn foo(t: Rc/*caret*/<usize>) {}
     """)
+
+    @MockEdition(CargoWorkspace.Edition.EDITION_2018)
+    fun `test import item from proc_macro`() = checkAutoImportFixByFileTree("""
+    //- dep-proc-macro/lib.rs
+        fn foo(_: <error descr="Unresolved reference: `TokenStream`">TokenStream/*caret*/</error>) {}
+    """, """
+    //- dep-proc-macro/lib.rs
+        use proc_macro::TokenStream;
+
+        fn foo(_: TokenStream) {}
+    """)
+
+    @MockEdition(CargoWorkspace.Edition.EDITION_2018)
+    fun `test item in core reexported in std`() = checkAutoImportFixByTextWithoutHighlighting("""
+        fn main() {
+            UnsafeCell/*caret*/;
+        }
+    """, """
+        use std::cell::UnsafeCell;
+
+        fn main() {
+            UnsafeCell;
+        }
+    """)
+
+    @MockEdition(CargoWorkspace.Edition.EDITION_2018)
+    fun `test item in core not reexported in std`() = checkAutoImportVariantsByText("""
+        fn main() {
+            SplitInclusive/*caret*/;
+        }
+    """, listOf("std::str::SplitInclusive", "core::slice::SplitInclusive"))
+
+    @MockEdition(CargoWorkspace.Edition.EDITION_2018)
+    fun `test item in core not reexported in std (with no_std)`() = checkAutoImportVariantsByText("""
+        #![no_std]
+        fn main() {
+            SplitInclusive/*caret*/;
+        }
+    """, listOf("core::slice::SplitInclusive", "core::str::SplitInclusive"))
 }

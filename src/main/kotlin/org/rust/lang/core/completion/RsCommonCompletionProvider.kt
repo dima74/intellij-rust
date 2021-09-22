@@ -18,10 +18,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 import org.rust.ide.refactoring.RsNamesValidator
 import org.rust.ide.settings.RsCodeInsightSettings
-import org.rust.ide.utils.import.ImportCandidate
-import org.rust.ide.utils.import.ImportCandidatesCollector
-import org.rust.ide.utils.import.ImportContext
-import org.rust.ide.utils.import.import
+import org.rust.ide.utils.import.*
 import org.rust.lang.core.RsPsiPattern
 import org.rust.lang.core.macros.findElementExpandedFrom
 import org.rust.lang.core.psi.*
@@ -192,59 +189,64 @@ object RsCommonCompletionProvider : RsCompletionProvider() {
         Testmarks.pathCompletionFromIndex.hit()
 
         val project = parameters.originalFile.project
-        val importContext = ImportContext.from(project, path, true)
-
-        val keys = hashSetOf<String>().apply {
-            val explicitNames = StubIndex.getInstance().getAllKeys(RsNamedElementIndex.KEY, project)
-            val reexportedNames = StubIndex.getInstance().getAllKeys(RsReexportIndex.KEY, project).mapNotNull {
-                (it as? ReexportKey.ProducedNameKey)?.name
-            }
-
-            addAll(explicitNames)
-            addAll(reexportedNames)
-
-            // Filters out path names that have already been added to `result`
-            removeAll(processedPathNames)
-        }
 
         val context = RsCompletionContext(path, expectedTy, isSimplePath = true)
-        for (elementName in result.prefixMatcher.sortMatching(keys)) {
-            val candidates = ImportCandidatesCollector.getImportCandidates(importContext, elementName, elementName) {
-                !(it.item is RsMod || it.item is RsModDeclItem || it.item.parent is RsMembers)
+        val candidates = if (project.useAutoImportWithNewResolve) run {
+            val importContext = ImportContext2.from(path, isCompletion = true) ?: return@run emptyList()
+            ImportCandidatesCollector2.getCompletionCandidates(importContext, result.prefixMatcher, processedPathNames)
+        } else {
+            val keys = hashSetOf<String>().apply {
+                val explicitNames = StubIndex.getInstance().getAllKeys(RsNamedElementIndex.KEY, project)
+                val reexportedNames = StubIndex.getInstance().getAllKeys(RsReexportIndex.KEY, project).mapNotNull {
+                    (it as? ReexportKey.ProducedNameKey)?.name
+                }
+
+                addAll(explicitNames)
+                addAll(reexportedNames)
+
+                // Filters out path names that have already been added to `result`
+                removeAll(processedPathNames)
             }
 
-            candidates
-                .map { candidate ->
-                    val item = candidate.qualifiedNamedItem.item
-                    val scopeEntry = SimpleScopeEntry(elementName, item)
-
-                    if (item is RsEnumItem
-                        && (context.expectedTy?.stripReferences() as? TyAdt)?.item == (item.declaredType as? TyAdt)?.item) {
-                        val variants = collectVariantsForEnumCompletion(item, context, scopeEntry.subst, candidate)
-                        result.addAllElements(variants)
+            val importContext = ImportContext.from(project, path, true)
+            result.prefixMatcher.sortMatching(keys)
+                .flatMap { elementName ->
+                    ImportCandidatesCollector.getImportCandidates(importContext, elementName, elementName) {
+                        !(it.item is RsMod || it.item is RsModDeclItem || it.item.parent is RsMembers)
                     }
-
-                    createLookupElement(
-                        scopeEntry = scopeEntry,
-                        context = context,
-                        locationString = candidate.info.usePath,
-                        insertHandler = object : RsDefaultInsertHandler() {
-                            override fun handleInsert(
-                                element: RsElement,
-                                scopeName: String,
-                                context: InsertionContext,
-                                item: LookupElement
-                            ) {
-                                super.handleInsert(element, scopeName, context, item)
-                                if (RsCodeInsightSettings.getInstance().importOutOfScopeItems) {
-                                    context.commitDocument()
-                                    context.getElementOfType<RsElement>()?.let { candidate.import(it) }
-                                }
-                            }
-                        }
-                    ).withImportCandidate(candidate)
                 }
-                .forEach(result::addElement)
+        }
+
+        for (candidate in candidates) {
+            val item = candidate.qualifiedNamedItem.item
+            val scopeEntry = SimpleScopeEntry(candidate.qualifiedNamedItem.itemName ?: continue, item)
+
+            if (item is RsEnumItem
+                && (context.expectedTy?.stripReferences() as? TyAdt)?.item == (item.declaredType as? TyAdt)?.item) {
+                val variants = collectVariantsForEnumCompletion(item, context, scopeEntry.subst, candidate)
+                result.addAllElements(variants)
+            }
+
+            val lookupElement = createLookupElement(
+                scopeEntry = scopeEntry,
+                context = context,
+                locationString = candidate.info.usePath,
+                insertHandler = object : RsDefaultInsertHandler() {
+                    override fun handleInsert(
+                        element: RsElement,
+                        scopeName: String,
+                        context: InsertionContext,
+                        item: LookupElement
+                    ) {
+                        super.handleInsert(element, scopeName, context, item)
+                        if (RsCodeInsightSettings.getInstance().importOutOfScopeItems) {
+                            context.commitDocument()
+                            context.getElementOfType<RsElement>()?.let { candidate.import(it) }
+                        }
+                    }
+                }
+            ).withImportCandidate(candidate)
+            result.addElement(lookupElement)
         }
     }
 
@@ -402,8 +404,8 @@ private fun methodAndFieldCompletionProcessor(
 ): RsResolveProcessor = createProcessor { e ->
     when (e) {
         is FieldResolveVariant -> result.addElement(createLookupElement(
-            scopeEntry = e,
-            context = context
+                scopeEntry = e,
+                context = context
         ))
         is MethodResolveVariant -> {
             if (e.element.isTest) return@createProcessor false
@@ -466,7 +468,7 @@ private fun getExpectedTypeForEnclosingPathOrDotExpr(element: RsReferenceElement
     return null
 }
 
-private fun LookupElement.withImportCandidate(candidate: ImportCandidate): RsImportLookupElement {
+private fun LookupElement.withImportCandidate(candidate: ImportCandidateBase): RsImportLookupElement {
     return RsImportLookupElement(this, candidate)
 }
 
@@ -479,7 +481,7 @@ private fun LookupElement.withImportCandidate(candidate: ImportCandidate): RsImp
  */
 private class RsImportLookupElement(
     delegate: LookupElement,
-    private val candidate: ImportCandidate
+    private val candidate: ImportCandidateBase
 ) : LookupElementDecorator<LookupElement>(delegate) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -501,7 +503,10 @@ private class RsImportLookupElement(
 }
 
 fun collectVariantsForEnumCompletion(
-    element: RsEnumItem, context: RsCompletionContext, substitution: Substitution, candidate: ImportCandidate? = null
+    element: RsEnumItem,
+    context: RsCompletionContext,
+    substitution: Substitution,
+    candidate: ImportCandidateBase? = null
 ): List<LookupElement> {
     val enumName = element.name ?: return emptyList()
 

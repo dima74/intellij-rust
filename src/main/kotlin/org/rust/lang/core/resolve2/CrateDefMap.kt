@@ -17,6 +17,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.util.SmartList
 import com.intellij.util.containers.map2Array
 import gnu.trove.THashMap
+import org.rust.cargo.project.workspace.CargoWorkspace.Edition
 import org.rust.lang.core.crate.CratePersistentId
 import org.rust.lang.core.psi.RsEnumVariant
 import org.rust.lang.core.psi.RsFile
@@ -55,6 +56,9 @@ class CrateDefMap(
     /** It is needed at least to handle `extern crate name as alias;` */
     val externPrelude: MutableMap<String, CrateDefMap> = initialExternPrelude.toMap(hashMapOf())
 
+    /** List of `extern crate` declarations in crate root. Needed only for 2015 edition. */
+    val externCratesInRoot: MutableMap<String, CrateDefMap> = hashMapOf()
+
     /**
      * File included via `include!` macro has same [FileInfo.modData] as main file,
      * but different [FileInfo.hash] and [FileInfo.modificationStamp]
@@ -77,6 +81,9 @@ class CrateDefMap(
     val rootAsPerNs: PerNs = PerNs.types(VisItem(root.path, Public, true))
 
     val globImportGraph: GlobImportGraph = GlobImportGraph()
+
+    val isAtLeastEdition2018: Boolean
+        get() = metaData.edition >= Edition.EDITION_2018
 
     fun getDefMap(crate: CratePersistentId): CrateDefMap? =
         if (crate == this.crate) this else allDependenciesDefMaps[crate]
@@ -451,6 +458,13 @@ class PerNs(
         )
     }
 
+    fun getVisItemsByNamespace(): Array<Pair<Array<VisItem>, Namespace>> =
+        arrayOf(
+            types to Namespace.Types,
+            values to Namespace.Values,
+            macros to Namespace.Macros,
+        )
+
     /** Needed to compare [PartialResolvedImport] in [DefCollector.resolveImports] */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -512,6 +526,7 @@ data class VisItem(
     val containingMod: ModPath get() = path.parent
     val name: String get() = path.name
     val crate: CratePersistentId get() = path.crate
+    fun isCrateRoot(): Boolean = path.segments.isEmpty()
 
     fun adjust(visibilityNew: Visibility, isFromNamedImport: Boolean): VisItem =
         copy(

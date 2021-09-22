@@ -324,16 +324,16 @@ class RsPathCompletionFromIndexTest : RsCompletionTestBase() {
     fun `test show all re-exports of single item`() {
         withOutOfScopeSettings {
             checkContainsCompletionByFileTree(listOf(
-                "Bar (crate::foo::Bar)",
-                "Bar (dep_lib_target::Bar)"
+                "Bar (dep_lib_target::Bar)",
+                "Bar (dep_lib_target_2::Bar)"
             ), """
-                //- dep-lib/lib.rs
+                //- trans-common-lib/lib.rs
                 pub struct Bar;
+                //- dep-lib/lib.rs
+                pub use trans_common_lib::Bar;
+                //- dep-lib-2/lib.rs
+                pub use trans_common_lib::Bar;
                 //- lib.rs
-
-                pub mod foo {
-                    pub use dep_lib_target::Bar;
-                }
                 fn foo(x: Ba/*caret*/) {}
             """) {
                 val presentation = LookupElementPresentation()
