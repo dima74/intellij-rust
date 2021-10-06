@@ -6,6 +6,7 @@ on:
             - master
             - staging
             - trying
+            - diralik/repl-enable-windows-tests
     pull_request:
     # Trigger workflow every day to create/update caches for other builds
     # See https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache
@@ -198,7 +199,7 @@ jobs:
 
             - name: Install evcxr
               # BACKCOMPAT: Evcxr 0.11 requires at least stable-1.53 or nightly-2021-05-01
-              if: matrix.os != 'windows-latest' && matrix.rust-version >= '1.53.0' && matrix.rust-version != 'nightly-2021-03-24'
+              if: matrix.rust-version >= '1.53.0' && matrix.rust-version != 'nightly-2021-03-24'
               uses: actions-rs/cargo@v1
               with:
                   command: install
