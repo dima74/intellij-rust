@@ -401,7 +401,7 @@ project(":") {
             exclude(module = "kotlin-stdlib")
             exclude(module = "kotlin-stdlib-common")
         }
-        implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.3"){
+        implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.4"){
             exclude(module = "jackson-core")
             exclude(module = "jackson-databind")
             exclude(module = "jackson-annotations")
