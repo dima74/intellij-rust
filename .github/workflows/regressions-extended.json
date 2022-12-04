@@ -1,0 +1,48 @@
+[
+    {
+        "name": "regressions-cargo",
+        "projects": [{"name": "cargo", "repository": "rust-lang/cargo"}]
+    },
+    {
+        "name": "regressions-mysql_async",
+        "projects": [{"name": "mysql_async", "repository": "blackbeam/mysql_async"}]
+    },
+    {
+        "name": "regressions-tokio",
+        "projects": [{"name": "tokio", "repository": "tokio-rs/tokio"}]
+    },
+    {
+        "name": "regressions-clap",
+        "projects": [{"name": "clap", "repository": "clap-rs/clap"}]
+    },
+    {
+        "name": "regressions-diesel",
+        "projects": [{"name": "diesel", "repository": "diesel-rs/diesel", "exclude": ["rust-toolchain"]}]
+    },
+    {
+        "name": "regressions-rust-analyzer",
+        "projects": [{"name": "rust-analyzer", "repository": "rust-analyzer/rust-analyzer"}]
+    },
+    {
+        "name": "regressions-xi-editor",
+        "projects": [{"name": "xi-editor", "repository": "xi-editor/xi-editor"}]
+    },
+    {
+        "name": "regressions-juniper",
+        "projects": [{"name": "juniper", "repository": "graphql-rust/juniper"}]
+    },
+    {
+        "name": "regressions-nalgebra",
+        "projects": [{"name": "nalgebra", "repository": "dimforge/nalgebra"}]
+    },
+    {
+        "name": "regressions-MeiliSearch",
+        "projects": [{"name": "MeiliSearch", "repository": "meilisearch/MeiliSearch"}]
+    },
+    {
+        "name": "regressions-stdlib",
+        "projects": [
+            {"name": "stdlib"}
+        ]
+    }
+]
