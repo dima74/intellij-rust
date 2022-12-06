@@ -7,6 +7,7 @@ package org.rustPerformanceTests
 
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.*
 import com.intellij.util.ui.UIUtil
 import org.rust.WithExperimentalFeatures
@@ -46,6 +47,8 @@ abstract class RsRealProjectTestBase : RsWithToolchainTestBase() {
             if (file.isDirectory &&
                 file.name in EXCLUDED_DIRECTORY_NAMES &&
                 file.parent.findChild(CargoConstants.MANIFEST_FILE) != null) return false
+            // 4. Ignore too large files
+            if (FileUtilRt.isTooLarge(file.length)) return false
 
             // Otherwise, analyse it
             return true
@@ -92,7 +95,7 @@ abstract class RsRealProjectTestBase : RsWithToolchainTestBase() {
         val TOKIO = RealProjectInfo("tokio", "tokio", "https://github.com/tokio-rs/tokio")
         val BEVY = RealProjectInfo("bevy", "bevy", "https://github.com/bevyengine/bevy")
         val CLAP = RealProjectInfo("clap", "clap", "https://github.com/clap-rs/clap")
-        val DIESEL = RealProjectInfo("diesel", "diesel", "https://github.com/diesel-rs/diesel")
+        val DIESEL = RealProjectInfo("diesel", "diesel", "https://github.com/diesel-rs/diesel", exclude = listOf("rust-toolchain"))
         val RUST_ANALYZER = RealProjectInfo("rust-analyzer", "rust-analyzer", "https://github.com/rust-analyzer/rust-analyzer")
         val XI_EDITOR = RealProjectInfo("xi-editor", "xi-editor/rust", "https://github.com/xi-editor/xi-editor")
         val JUNIPER = RealProjectInfo("juniper", "juniper", "https://github.com/graphql-rust/juniper")

@@ -21,4 +21,5 @@ if __name__ == '__main__':
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         else:
             repository = project["repository"]
-            git_command("clone", "--depth", "1", f"https://github.com/{repository}.git", path)
+            repository_url = repository if repository.startswith("https://") else f"https://github.com/{repository}.git"
+            git_command("clone", "--depth", "1", "--recurse-submodules", repository_url, path)
