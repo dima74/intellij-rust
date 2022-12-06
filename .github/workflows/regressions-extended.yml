@@ -1,6 +1,10 @@
 name: regressions-extended
 
-on: [ workflow_dispatch ]
+on:
+    workflow_dispatch:
+    push:
+        branches-ignore:
+            - master
 
 jobs:
     main:

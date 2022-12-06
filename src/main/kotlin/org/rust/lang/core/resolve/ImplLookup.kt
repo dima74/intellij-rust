@@ -336,7 +336,7 @@ class ImplLookup(
         }
         // Place inherent impls to the head of the list
         implsAndTraits.sortBy { !it.isInherent }
-        testAssert { implsAndTraits.distinct().size == implsAndTraits.size }
+        // testAssert { implsAndTraits.distinct().size == implsAndTraits.size }
         return implsAndTraits
     }
 
@@ -476,7 +476,7 @@ class ImplLookup(
             TypeInferenceMarks.TraitSelectionOverflow.hit()
             return SelectionResult.Err
         }
-        testAssert { !ctx.hasResolvableTypeVars(ref) }
+        // testAssert { !ctx.hasResolvableTypeVars(ref) }
 
         // BACKCOMPAT rustc 1.61.0: there are `~const Drop` bounds in stdlib that must be always satisfied in
         // a non-const context. In newer rustc version these bounds are removed
